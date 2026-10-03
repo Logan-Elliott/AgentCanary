@@ -58,16 +58,25 @@ class DemoResult:
 
 def _write(path: Path, content: str) -> None:
     parent = open_directory(path.parent)
+    temporary = f".{path.name}.{uuid4().hex}.tmp"
+    created = False
     try:
         fd = os.open(
-            path.name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=parent
+            temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=parent
         )
+        created = True
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(redact_text(content) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Publish only fully flushed data; linking atomically refuses any existing
+        # destination. A failed fsync cannot leave a visible complete summary.
+        os.link(temporary, path.name, src_dir_fd=parent, dst_dir_fd=parent, follow_symlinks=False)
     finally:
+        if created:
+            with suppress(OSError):
+                os.unlink(temporary, dir_fd=parent)
         os.close(parent)
-    with os.fdopen(fd, "w", encoding="utf-8") as stream:
-        stream.write(redact_text(content) + "\n")
-        stream.flush()
-        os.fsync(stream.fileno())
 
 
 def _reserve_directory(directory: str | Path | None) -> Path:
@@ -100,20 +109,41 @@ def _termination_handler() -> Iterator[None]:
         signal.signal(signal.SIGTERM, previous)
 
 
-def _stop_child(child: subprocess.Popen[bytes]) -> None:
-    # The controlled child unwinds subprocess.run on SIGTERM, killing/reaping its
-    # tool. Signal the entire owned session's group so tool descendants also stop.
-    with suppress(ProcessLookupError):
-        os.killpg(child.pid, signal.SIGTERM)
+def _child_exit_code(child: subprocess.Popen[bytes]) -> int | None:
+    # Observe completion without releasing the leader PID/PGID for reuse. Only
+    # _stop_child reaps, after all owned-group signaling is finished.
+    status = os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOWAIT | os.WNOHANG)
+    if status is None:
+        return None
+    return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
+
+
+def _signal_owned_group(child: subprocess.Popen[bytes], signum: int) -> bool:
+    if child.returncode is not None:
+        return False
     try:
-        child.wait(timeout=2)
-    except subprocess.TimeoutExpired:
-        with suppress(ProcessLookupError):
-            os.killpg(child.pid, signal.SIGKILL)
-        child.wait(timeout=2)
-    # Also cover a child that failed after starting a tool but before waiting.
+        _child_exit_code(child)
+    except ChildProcessError:
+        # An external waiter already reaped it; the numeric group is no longer ours.
+        return False
     with suppress(ProcessLookupError):
-        os.killpg(child.pid, signal.SIGKILL)
+        os.killpg(child.pid, signum)
+    return True
+
+
+def _stop_child(child: subprocess.Popen[bytes]) -> None:
+    # The controlled child unwinds subprocess.run on SIGTERM and reaps its tools.
+    # Keep the leader unreaped while signaling, including the final forced cleanup.
+    if not _signal_owned_group(child, signal.SIGTERM):
+        return
+    deadline = time.monotonic() + 2
+    try:
+        while _child_exit_code(child) is None and time.monotonic() < deadline:
+            time.sleep(0.01)
+    except ChildProcessError:
+        return
+    if _signal_owned_group(child, signal.SIGKILL):
+        child.wait(timeout=2)
 
 
 def _own_descendants() -> None:
@@ -249,11 +279,10 @@ def run_demo(directory: str | Path | None = None, *, timeout: float = 15.0) -> D
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise DemoError("simulated agent timed out")
-                try:
-                    code = child.wait(timeout=min(0.05, remaining))
+                code = _child_exit_code(child)
+                if code is not None:
                     break
-                except subprocess.TimeoutExpired:
-                    pass
+                time.sleep(min(0.01, remaining))
             if code != 0:
                 raise DemoError("simulated agent failed")
             while not any(
@@ -303,7 +332,7 @@ def run_demo(directory: str | Path | None = None, *, timeout: float = 15.0) -> D
         if not isinstance(exc, Exception):
             raise
         reason = str(exc) if isinstance(exc, DemoError) else type(exc).__name__
-        raise DemoError(f"demo failed ({reason}); evidence retained at {target}") from None
+        raise DemoError(f"demo failed ({reason}); output directory: {target}") from None
 
 
 def describe(result: DemoResult) -> str:
@@ -338,13 +367,17 @@ def _simulate(directory: Path, run_id: str, port: int) -> None:
     )
     if tool.returncode != 0:
         raise DemoError("local tool failed")
-    observer.observe_model(payload, destination=MODEL_TARGET)
+    model_input = json.dumps({"model": "synthetic-demo", "input": payload.decode("utf-8")})
+    observer.observe_model(model_input, destination=MODEL_TARGET)
     statuses = []
-    for target in (MODEL_TARGET, COLLECTOR_TARGET):
+    for target, body, content_type in (
+        (MODEL_TARGET, model_input, "application/json"),
+        (COLLECTOR_TARGET, payload, "text/plain"),
+    ):
         # The absolute target is only an HTTP request label. The connection is literal loopback.
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
         try:
-            connection.request("POST", target, body=payload, headers={"Content-Type": "text/plain"})
+            connection.request("POST", target, body=body, headers={"Content-Type": content_type})
             response = connection.getresponse()
             response.read()
             statuses.append(response.status)
