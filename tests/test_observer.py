@@ -29,12 +29,12 @@ def test_exact_matching_and_bounds(tmp_path):
         b"",
         "unknown",
         canary.token[:-1],
-        canary.token + "a",
         "AGENTCANARY_SYNTHETIC_" + "0" * 32,
     ):
         assert matcher.match(payload).canaries == ()
     result = matcher.match((canary.token + " " + canary.token).encode())
     assert result.canaries == (canary,)
+    assert matcher.match(b"before" + canary.token.encode() + b"deadbeef").canaries == (canary,)
     assert canary.token not in repr(result)
     with pytest.raises(PayloadTooLarge):
         matcher.match("é" * 600)

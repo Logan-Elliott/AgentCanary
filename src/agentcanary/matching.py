@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from .models import TOKEN_PATTERN, Canary
 
 DEFAULT_MAX_BYTES = 1024 * 1024
-_MARKER = re.compile(TOKEN_PATTERN.pattern.encode() + rb"(?![0-9a-f])")
+_MARKER = re.compile(TOKEN_PATTERN.pattern.encode())
 
 
 class PayloadTooLarge(ValueError):

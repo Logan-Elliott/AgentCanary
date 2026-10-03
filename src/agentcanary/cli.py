@@ -2,13 +2,18 @@
 
 import argparse
 import json
+import math
+import signal
 import sys
+import threading
+import time
 from pathlib import Path
 from uuid import uuid4
 
 from . import __version__
 from .generator import PROFILES, create_canary, seed
 from .models import Action
+from .monitors import InotifyMonitor, MonitorError
 from .report import redact_text, render_report
 from .store import Store, StoreError
 from .templates import BUILTINS, MAX_TEMPLATE_BYTES
@@ -52,9 +57,42 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--run-id", help="filter by correlation label")
     report.add_argument("--after-seq", type=int, default=0, help="show events after this sequence")
     report.add_argument("--limit", type=int, help="maximum number of events")
+    monitor = commands.add_parser("monitor", help="watch a registered artifact snapshot on Linux")
+    monitor.add_argument("root", help="workspace directory; seed before starting")
+    monitor.add_argument("--run-id", help="correlation label")
+    monitor.add_argument("--duration", type=float, help="stop after this many seconds")
     types = commands.add_parser("types", help="list synthetic artifact types and profiles")
     types.add_argument("--json", action="store_true")
     return parser
+
+
+def _monitor(store: Store, root: str, run_id: str | None, duration: float | None) -> int:
+    if duration is not None and (not math.isfinite(duration) or duration <= 0):
+        raise ValueError("duration must be positive and finite")
+    stopped = threading.Event()
+    previous = signal.getsignal(signal.SIGTERM)
+    signal.signal(signal.SIGTERM, lambda signum, frame: stopped.set())
+    try:
+        with InotifyMonitor(store, root, run_id=run_id) as monitor:
+            print(
+                json.dumps(
+                    {
+                        "status": "ready",
+                        "watch_count": monitor.watch_count,
+                        "run_id": monitor.run_id,
+                        "registry_policy": "snapshot_restart",
+                    }
+                ),
+                flush=True,
+            )
+            deadline = time.monotonic() + duration if duration is not None else None
+            while not stopped.wait(0.05):
+                monitor.check()
+                if deadline is not None and time.monotonic() >= deadline:
+                    break
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
             if output:
                 print(output)
             return 0
+        if args.command == "monitor":
+            return _monitor(Store(args.state_dir), args.root, args.run_id, args.duration)
         if args.command == "create":
             if (args.kind == "custom") != bool(args.template):
                 raise ValueError("custom type and --template must be used together")
@@ -107,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
             for record in records:
                 print(redact_text(f"Created {record.kind}: {record.path} ({record.id})"))
         return 0
-    except (OSError, ValueError, StoreError) as exc:
+    except (OSError, ValueError, StoreError, MonitorError) as exc:
         message = redact_text(str(exc))
         message = "".join(c if ord(c) >= 32 and ord(c) != 127 else "?" for c in message)
         print(f"agentcanary: {message}", file=sys.stderr)
