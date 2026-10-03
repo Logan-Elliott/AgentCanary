@@ -92,3 +92,40 @@ def test_concurrent_threads(tmp_path: Path) -> None:
         list(pool.map(store.register, records))
     assert len(store.canaries()) == 30
     assert [event.seq for event in store.events()] == list(range(1, 31))
+
+
+def test_database_links_and_unrecognized_schema_are_rejected(tmp_path: Path) -> None:
+    state = tmp_path / "state"
+    state.mkdir(mode=0o700)
+    target = tmp_path / "untouched"
+    target.write_text("keep")
+    (state / "events.sqlite3").symlink_to(target)
+    with pytest.raises(UnsafePathError):
+        Store(state)
+    assert target.read_text() == "keep"
+    (state / "events.sqlite3").unlink()
+    target.chmod(0o600)
+    os.link(target, state / "events.sqlite3")
+    with pytest.raises(UnsafePathError):
+        Store(state)
+    (state / "events.sqlite3").unlink()
+    with sqlite3.connect(state / "events.sqlite3") as connection:
+        connection.execute("CREATE TABLE unrelated (value TEXT)")
+    (state / "events.sqlite3").chmod(0o600)
+    with pytest.raises(StoreError, match="unrecognized"):
+        Store(state)
+
+
+def test_query_parameters_and_sequence_limits(tmp_path: Path) -> None:
+    store = Store(tmp_path / "state")
+    item = canary()
+    store.register(item, run_id="first")
+    store.record(Event(action=Action.READ, source="sdk", canary_id=item.id, run_id="second"))
+    assert len(store.events(limit=1)) == 1
+    assert len(store.events(canary_id=item.id, action=Action.READ, run_id="second")) == 1
+    assert store.events(canary_id="' OR 1=1 --") == []
+    assert store.get_canary("' OR 1=1 --") is None
+    with pytest.raises(ValueError):
+        store.events(after_seq=-1)
+    with pytest.raises(ValueError):
+        store.events(limit=0)

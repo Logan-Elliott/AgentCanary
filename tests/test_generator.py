@@ -1,4 +1,5 @@
 import hashlib
+import os
 from pathlib import Path
 
 import pytest
@@ -122,3 +123,49 @@ def test_readonly_workspace_fails_without_registration(tmp_path: Path) -> None:
         assert not store.canaries()
     finally:
         workspace.chmod(0o700)
+
+
+def test_symlink_inserted_after_preflight_is_not_followed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import agentcanary.generator as generator
+
+    store = Store(tmp_path / "state")
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original = generator._preflight
+
+    def swap(root_fd: int, parts: tuple[str, ...]) -> None:
+        original(root_fd, parts)
+        (workspace / "nested").symlink_to(outside, target_is_directory=True)
+
+    monkeypatch.setattr(generator, "_preflight", swap)
+    with pytest.raises(OSError):
+        create_canary(store, workspace, "nested/file")
+    assert not list(outside.iterdir())
+    assert not store.canaries()
+
+
+def test_write_failure_cleans_partial_batch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = Store(tmp_path / "state")
+    workspace = tmp_path / "workspace"
+    real_fsync = os.fsync
+    calls = 0
+
+    def fail_second_file(fd: int) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise OSError("simulated disk failure")
+        real_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", fail_second_file)
+    with pytest.raises(OSError, match="simulated"):
+        seed(store, workspace, specs=[SeedSpec("first", "env"), SeedSpec("second", "env")])
+    assert not list(workspace.iterdir())
+    assert not store.canaries()
