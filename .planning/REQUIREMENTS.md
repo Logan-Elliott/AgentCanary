@@ -19,9 +19,9 @@ Defined: 2026-10-03
 
 ### HTTP and model request inspection
 
-- [ ] **NET-01**: Inspect real HTTP requests locally and record attempted exfiltration without forwarding; identify model API paths.
-- [ ] **NET-02**: Detect exact issued tokens in plaintext, common URL/JSON/base64 representations and bounded gzip bodies; reject unsupported framing explicitly.
-- [ ] **NET-03**: Provide strict local allowlist/ignore configuration, provenance, safe metadata and no body/credential logging.
+- [x] **NET-01**: Inspect real HTTP requests locally and record attempted exfiltration without forwarding; identify model API paths.
+- [x] **NET-02**: Detect exact issued tokens in plaintext, common URL/JSON/base64 representations and bounded gzip bodies; reject unsupported framing explicitly.
+- [x] **NET-03**: Provide strict local allowlist/ignore configuration, provenance, safe metadata and no body/credential logging.
 
 ### End-to-end demo and adversarial integration
 
@@ -50,9 +50,9 @@ Defined: 2026-10-03
 | OBS-01 | Phase 2 | Complete |
 | OBS-02 | Phase 2 | Complete |
 | OBS-03 | Phase 2 | Complete |
-| NET-01 | Phase 3 | Pending |
-| NET-02 | Phase 3 | Pending |
-| NET-03 | Phase 3 | Pending |
+| NET-01 | Phase 3 | Complete |
+| NET-02 | Phase 3 | Complete |
+| NET-03 | Phase 3 | Complete |
 | E2E-01 | Phase 4 | Pending |
 | E2E-02 | Phase 4 | Pending |
 | REL-01 | Phase 5 | Pending |

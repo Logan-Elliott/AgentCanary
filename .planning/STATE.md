@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v0.1
 milestone_name: Local release
-current_phase: 2
+current_phase: 3
 status: phase_complete
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-10-03T22:23:55.817Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-10-03T22:56:14.272Z"
 last_activity: 2026-10-03
-last_activity_desc: Phase 2 verified with 83 passing tests and clean quality checks
-state_head: 25f3e2044034998c4be08c1bacbae01952503c96
+last_activity_desc: Phase 3 verified with 159 passing tests and clean quality checks
+state_head: 40ab6de3bd50524e0e9760112c1c979767063555
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 5
-  completed_plans: 2
-  percent: 40
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -23,15 +23,15 @@ progress:
 
 See: .planning/PROJECT.md
 Core value: traceable creation, access, propagation and attempted exfiltration.
-Current focus: Phase 2 complete; Phase 3 — HTTP and model request inspection is next.
+Current focus: Phase 3 complete; Phase 4 — End-to-end demo and adversarial integration is next.
 
 ## Current Position
 
-Phase: 2 of 5
+Phase: 3 of 5
 Plan: 1 of 1
-Status: Phase 2 complete and verified
-Last activity: 2026-10-03 — 83 tests, lint/format and strict typing passed
-Progress: [████░░░░░░] 40%
+Status: Phase 3 complete and verified
+Last activity: 2026-10-03 — 159 tests, lint/format and strict typing passed
+Progress: [██████░░░░] 60%
 
 ## Decisions
 
@@ -46,6 +46,9 @@ Progress: [████░░░░░░] 40%
 - [Phase 01]: Create accepts positional KIND and optional --output; reports enrich events with registry canary_type.
 - [Phase 02]: Passive inotify reads retain pid=None; SDK PID identifies the caller and tool input is an invocation attempt.
 - [Phase 02]: All snapshot validation precedes watches; changes invalidate coverage until stop/start. Observer.refresh explicitly updates issued-marker matching.
+- [Phase 03]: The loopback HTTP endpoint always blocks without upstream DNS/connections; listener PID remains unknown.
+- [Phase 03]: Strict policy retains annotated observations; exact origins and conjunctive ignore rules never affect CREATE, health or forwarding.
+- [Phase 03]: Decoder budgets and unsupported framing fail visibly; SDK HTTP/model/embedding helpers observe before TLS with caller PID.
 
 ## Blockers/Concerns
 
@@ -53,8 +56,8 @@ None. Known capability limits will be documented and tested, not concealed.
 
 ## Session Continuity
 
-**Last session:** 2026-10-03T22:23:55.791Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-10-03T22:56:14.236Z
+**Stopped at:** Completed 03-01-PLAN.md
 **Resume file:** None
 
 Resume: read ROADMAP.md and the first incomplete phase's CONTEXT/PLAN/SUMMARY.
@@ -65,3 +68,4 @@ Resume: read ROADMAP.md and the first incomplete phase's CONTEXT/PLAN/SUMMARY.
 |------|----------|-------|-------|
 | Phase 01 P01 | 24min | 3 tasks | 19 files |
 | Phase 02 P01 | 30min | 3 tasks | 9 files |
+| Phase 03 P01 | 23min | 3 tasks | 11 files |
