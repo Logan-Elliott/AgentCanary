@@ -72,7 +72,6 @@ class Store:
 
     def _initialize(self) -> None:
         with self._connection() as connection:
-            connection.execute("PRAGMA journal_mode=WAL")
             connection.execute("BEGIN IMMEDIATE")
             try:
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -105,6 +104,8 @@ class Store:
             except BaseException:
                 connection.rollback()
                 raise
+            # Journal mode is persistent: never change it on a database we reject.
+            connection.execute("PRAGMA journal_mode=WAL")
 
     @staticmethod
     def _insert_event(connection: sqlite3.Connection, event: Event) -> Event:
