@@ -24,7 +24,7 @@ The relevant PROJECT.md requirements are represented. Clean wheel/sdist installa
 
 | Plan | Tasks | Declared scope | Wave | Status |
 | --- | --- | --- | --- | --- |
-| 04-01 | 2 | 5 concrete implementation/test/document files, an examples directory and phase evidence documents | 1 | Valid |
+| 04-01 | 2 | 5 concrete implementation/test/document files and phase evidence documents | 1 | Valid |
 
 `query verify.plan-structure` on the revised plan returned `valid: true`, no errors, no warnings, and files/action/verify/done present for both automatic tasks. `must_haves` was parsed and describes observable behavior supported by the runner and acceptance tests.
 
@@ -35,10 +35,10 @@ These are historical findings, not current issues.
 | Prior severity | Required property | Revised evidence | Disposition |
 | --- | --- | --- | --- |
 | BLOCKER | Every automatic task declares the concrete files it creates or changes. | Both tasks now contain file assignments naming their implementation, test and documentation artifacts. | Resolved |
-| BLOCKER | Verification returns failure if any required test, lint, format or type check fails. | Automated blocks now use XML-escaped failure-propagating conjunctions; the phase verification also explicitly requires checking each exit status separately and success from every command. | Resolved |
+| BLOCKER | Verification returns failure if any required test, lint, format or type check fails. | Automated blocks now use literal `&&` conjunctions and the required RTK wrapper; phase verification also explicitly requires checking each exit status separately and success from every command. | Resolved |
 | WARNING | Failure verification accounts for every owned process, including the tool beneath the simulated agent. | Phase verification requires a dedicated child process group/session, cleanup on timeout/interruption/failure and a bounded regression proving descendants do not survive. | Resolved |
 
-The executor must interpret the XML entities as command text or run the commands separately as the plan explicitly permits, applying the session's required RTK wrapper.
+The final bounded recheck confirmed literal runnable conjunctions, RTK wrapping for every verification command and removal of the unspecified examples directory. The structure validator still reports no errors or warnings.
 
 ## Remaining dimensions
 
@@ -46,7 +46,7 @@ The executor must interpret the XML entities as command text or run the commands
 - **Wiring and contracts:** Actions connect the runner, CLI, SDK, monitors, listener and reports through issued ID and run correlation. The checked `Store`, `Observer`, `InotifyMonitor`, `BlockingProxy` and `render_report` interfaces support the composition. The plan requires durable evidence as well as HTTP rejection, which avoids mistaking 403 alone for successful detection.
 - **Context compliance:** The plan retains the new-directory boundary, common run, seed-before-monitor ordering, real child/tool, local traffic, source-specific PID claims, bounded readiness and cleanup, safe evidence export and incomplete-chain failure. Ordered direct SDK observations, the independent passive-read predicate, JSONL export and explicit report instructions remain the recorded acceptance details in CONTEXT.md. No locked decision is reduced or deferred idea introduced.
 - **Existing test coverage:** Task 2's full regression includes matching negative controls and HTTP rejection/no-forwarding tests already present. `test_field_boundaries_negative_controls_and_dedup`, framing rejections and `test_real_http_proxy_never_resolves_or_connects_upstream` support reuse instead of duplicate tests.
-- **Scope:** Two tasks fit the plan budget. No estimate block is supplied. The optional examples-directory scope does not introduce another subsystem.
+- **Scope:** Two tasks and five implementation/test/document files fit the plan budget. No estimate block is supplied.
 - **Research resolution:** No unresolved research questions. The completed Phase 3 summary grounds the expected interfaces. No conflicting numeric claim was used as an acceptance assertion.
 - **Dimension 7c:** SKIPPED (no Architectural Responsibility Map).
 - **Dimension 8:** SKIPPED (`workflow.nyquist_validation` is false; no Validation Architecture section). No failing-direction or verify-path probe was supplied, so those probe-only checks remain silent.
