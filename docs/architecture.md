@@ -37,6 +37,7 @@ The HTTP listener has no upstream forwarding path. SDK observation methods inspe
 | `policy` | Validated operator policy and retained event annotations |
 | `protocols` | Small `EventSink` and `Monitor` extension contracts |
 | `report`, `cli` | User-facing commands and token-redacted report rendering |
+| `demo` | Installed simulated-agent acceptance flow and owned process-group cleanup |
 
 ## Canary identity
 
@@ -69,6 +70,8 @@ The local store uses Linux `/proc/self/fd` to pin the selected directory while S
 The passive adapter supports one registered canary per watched inode. A duplicate registration is explicitly rejected for that run with `duplicate_inode` health evidence; the original watch is retained. The SDK matcher can still identify multiple issued markers in a payload. Passive monitoring does not automatically discover arbitrary copied files.
 
 `BlockingProxy` exposes a local lifecycle and request-inspection boundary. It blocks all upstream attempts, including policy matches. Its PID field is unknown because a TCP request does not identify the sending process. Client-supplied identity headers are not trusted.
+
+The demo runs a controlled Python child in its own session. That disposable child acts as a Linux subreaper to collect owned tool descendants during failure cleanup. This is demonstration lifecycle machinery; it does not alter the SDK caller's process-wide child-reaping policy or provide hostile-process containment.
 
 ## Extension points
 

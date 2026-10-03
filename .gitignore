@@ -14,3 +14,5 @@ htmlcov/
 dist/
 *.egg-info/
 .agentcanary/
+agentcanary-demo-*/
+coverage.xml

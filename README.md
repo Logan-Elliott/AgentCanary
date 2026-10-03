@@ -126,16 +126,19 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy src
 uv build
+uv run python scripts/verify_install.py
 ```
 
-Tests exercise real Linux notifications, subprocesses, concurrent writers, loopback requests, malformed/oversized inputs, policy behavior, and failure cleanup. No provider API key is needed. Clean-environment installation and the full demonstration are release acceptance checks.
+Tests exercise real Linux notifications, subprocesses, concurrent writers, loopback requests, malformed/oversized inputs, policy behavior, and failure cleanup. No provider API key is needed. The installation verifier checks wheel/source contents and installs each into a separate temporary environment, then runs the CLI and complete demo outside the checkout. Source installation may download build dependencies; application checks require no external service.
 
 ## Documentation
 
 - [Architecture and extension interfaces](docs/architecture.md)
+- [SDK, HTTP and policy integration](docs/integrations.md)
 - [Threat model](docs/threat-model.md)
 - [Monitoring limitations](docs/limitations.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
+- [Release notes](CHANGELOG.md)
 
 Licensed under [MIT](LICENSE).

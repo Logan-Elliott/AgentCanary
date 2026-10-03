@@ -9,6 +9,22 @@ description = "Synthetic canaries and local evidence for AI-agent workspaces"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "Logan-Elliott", email = "dev.loganelliott@gmail.com"}]
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["ai-agents", "canary", "tripwire", "security", "observability"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
 dependencies = []
 
 [project.scripts]
@@ -21,7 +37,11 @@ dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "mypy>=1.15,<2", "b
 packages = ["src/agentcanary"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/agentcanary", "tests", "pyproject.toml", "README.md", "uv.lock"]
+include = [
+  "src/agentcanary", "tests", "docs", "examples", "scripts", ".github",
+  "pyproject.toml", "README.md", "uv.lock", "LICENSE", "CONTRIBUTING.md",
+  "SECURITY.md", "CHANGELOG.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -41,4 +61,3 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-
