@@ -29,6 +29,16 @@ class DecodeError(ValueError):
         super().__init__(f"representation inspection incomplete: {reason}")
 
 
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject duplicate JSON members before a dictionary can discard their values."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise DecodeError("duplicate_json_key")
+        result[key] = value
+    return result
+
+
 def bounded_bytes(payload: bytes | str, limit: int) -> bytes:
     if not isinstance(payload, (bytes, str)):
         raise TypeError("payload must be bytes or text")
@@ -144,7 +154,9 @@ class TokenMatcher:
             )
             if json_candidate:
                 try:
-                    value = json.loads(stripped)
+                    value = json.loads(stripped, object_pairs_hook=_unique_object)
+                except DecodeError:
+                    raise
                 except (ValueError, RecursionError):
                     raise DecodeError("invalid_json") from None
                 nodes = [value]

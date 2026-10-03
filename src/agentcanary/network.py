@@ -31,6 +31,11 @@ MODEL_ROUTES = frozenset(
 
 def safe_origin(url: str) -> str:
     """Canonical HTTP(S) origin only. Parsing never performs DNS or socket I/O."""
+    return _origin_details(url)[0]
+
+
+def _origin_details(url: str) -> tuple[str, bool]:
+    """Return a safe display origin and whether its hostname lost identity to redaction."""
     try:
         if len(url) > 16384 or any(ord(c) <= 32 or ord(c) == 127 for c in url):
             raise ValueError
@@ -39,7 +44,7 @@ def safe_origin(url: str) -> str:
         port = parsed.port
         if parsed.scheme not in ("http", "https") or not host or "%" in host:
             raise ValueError
-        host = re.sub(TOKEN_PATTERN.pattern, "redacted", host, flags=re.IGNORECASE)
+        host, replacements = re.subn(TOKEN_PATTERN.pattern, "redacted", host, flags=re.IGNORECASE)
         if ":" in host:
             host = f"[{ipaddress.IPv6Address(host).compressed}]"
         elif re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,251}[a-zA-Z0-9])?", host) is None:
@@ -51,7 +56,7 @@ def safe_origin(url: str) -> str:
             if port is not None and port != (443 if parsed.scheme == "https" else 80)
             else ""
         )
-        return f"{parsed.scheme}://{host.lower()}{suffix}"
+        return f"{parsed.scheme}://{host.lower()}{suffix}", replacements > 0
     except ValueError:
         raise ValueError("destination must contain a valid HTTP(S) origin") from None
 
@@ -217,9 +222,11 @@ class HTTPInspector:
         try:
             target = bounded_bytes(target, min(self.max_bytes, 16384)).decode("utf-8")
             if target.startswith("/") and not target.startswith("//"):
-                destination = safe_origin("http://" + lowered.get("host", "localhost"))
+                destination, redacted = _origin_details(
+                    "http://" + lowered.get("host", "localhost")
+                )
             else:
-                destination = safe_origin(target)
+                destination, redacted = _origin_details(target)
             data = _body_bytes(body, lowered.get("content-encoding"), self.max_bytes)
         except (DecodeError, PayloadTooLarge, ValueError) as exc:
             reason = exc.reason if isinstance(exc, DecodeError) else "invalid_http_input"
@@ -232,6 +239,7 @@ class HTTPInspector:
             "blocked": blocked,
             "operation": "transmission_attempt" if blocked else "input_observed",
             "body_bytes": len(data),
+            "destination_redacted": redacted,
         }
         if route is not None:
             actions.append(Action.MODEL_REQUEST)
@@ -256,9 +264,10 @@ class HTTPInspector:
         embedding: bool = False,
     ) -> tuple[Event, ...]:
         """Observe explicit model or embedding input; no delivery or semantic-use claim."""
-        origin = safe_origin(destination)
+        origin, redacted = _origin_details(destination)
         metadata: dict[str, Scalar] = {
             "operation": "embedding_input" if embedding else "model_input",
+            "destination_redacted": redacted,
         }
         route = model_route(destination)
         if route is not None:

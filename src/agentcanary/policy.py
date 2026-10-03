@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from .filesystem import absolute_path, open_directory
-from .models import Action, Event
+from .models import TOKEN_PATTERN, Action, Event
 from .network import safe_origin
 from .protocols import EventSink
 
@@ -32,6 +32,7 @@ def _origin(value: str) -> str:
             or parsed.fragment
             or "?" in value
             or "#" in value
+            or re.search(TOKEN_PATTERN.pattern, parsed.hostname or "", re.IGNORECASE)
         ):
             raise ValueError
         return safe_origin(value)
@@ -106,6 +107,7 @@ class Policy:
             decision == "observed"
             and event.action in (Action.EXFILTRATION, Action.MODEL_REQUEST)
             and (event.destination in self.allow_origins)
+            and event.metadata.get("destination_redacted") is not True
         ):
             decision = "allowlisted"
         metadata = dict(event.metadata)

@@ -26,6 +26,8 @@ A passive monitor supports one canary registration per inode; additional registr
 
 The local HTTP endpoint is an evaluation and interception boundary, not a general-purpose web service or a system firewall. Configure cooperating applications explicitly. Unsupported framing, limit violations and encrypted tunnels are rejected and diagnosed; they are not recorded as successful clean inspections.
 
+JSON objects with repeated member names are rejected as ambiguous input. Hostname redaction removes exact destination identity, so those observations cannot receive an origin allowlist decision. See [integration configuration](integrations.md) for limits and policy semantics.
+
 Built-in credentials are nonfunctional. Custom templates are trusted text: their literal content is the operator's responsibility. Default reporting removes synthetic tokens, but the lower-level Event API is not an arbitrary-secret redaction service. Do not put real credentials or raw payloads in custom metadata.
 
 Legitimate tools may access a canary. Review source and provenance before interpreting a sighting as malicious. Sequence and timestamp order support correlation but do not prove causality across processes or sensors.
