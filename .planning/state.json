@@ -21,7 +21,7 @@
     {
       "number": "4",
       "name": "End-to-end demo and adversarial integration",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "5",
@@ -30,9 +30,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-autonomous --from 4",
-    "label": "Execute Phase 4",
-    "reason": "Phases 1–3 verified; end-to-end demo and adversarial integration next"
+    "command": "/gsd:progress --next",
+    "label": "Continue Phase 5 release hardening",
+    "reason": "Phase 4 of 5 complete and verified · 80%"
   },
-  "updated_at": "2026-10-03T22:56:12.928Z"
+  "updated_at": "2026-10-03T23:30:18.957Z"
 }

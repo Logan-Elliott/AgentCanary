@@ -9,7 +9,7 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 - [x] **Phase 1: Foundation and safe canary lifecycle** — Create, seed and report synthetic canaries safely using a durable extensible event model.
 - [x] **Phase 2: Filesystem and attributed observations** — Observe file access and explicitly attributed read/copy/tool interactions with honest source evidence.
 - [x] **Phase 3: HTTP and model request inspection** — Detect token propagation through HTTP and model requests with bounded parsing and local-only interception.
-- [ ] **Phase 4: End-to-end demo and adversarial integration** — Prove the complete canary chain with a real subprocess and loopback HTTP and exercise failure boundaries.
+- [x] **Phase 4: End-to-end demo and adversarial integration** — Prove the complete canary chain with a real subprocess and loopback HTTP and exercise failure boundaries.
 - [ ] **Phase 5: Release hardening and documentation** — Verify installation, audit the implementation, fix weaknesses and document a polished local release.
 
 ### Phase 1: Foundation and safe canary lifecycle
@@ -61,8 +61,8 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 1. Demonstrate creation → read → copy/tool → mock model request → attempted HTTP exfiltration using a simulated agent and loopback only.
 2. Test major failure paths, false positives/negatives, concurrency, attribution and network blind spots.
 
-**Plans:** 1 plan
-- [ ] 04-01-PLAN.md — End-to-end demo and adversarial integration
+**Plans:** 1/1 plans executed
+- [x] 04-01-PLAN.md — End-to-end demo and adversarial integration
 
 ### Phase 5: Release hardening and documentation
 
@@ -84,5 +84,5 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 | 1. Foundation and safe canary lifecycle | 1/1 | Complete | 2026-10-03 |
 | 2. Filesystem and attributed observations | 1/1 | Complete | 2026-10-03 |
 | 3. HTTP and model request inspection | 1/1 | Complete | 2026-10-03 |
-| 4. End-to-end demo and adversarial integration | 0/1 | Not started | - |
+| 4. End-to-end demo and adversarial integration | 1/1 | Complete | 2026-10-03 |
 | 5. Release hardening and documentation | 0/1 | Not started | - |

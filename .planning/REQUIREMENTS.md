@@ -25,8 +25,8 @@ Defined: 2026-10-03
 
 ### End-to-end demo and adversarial integration
 
-- [ ] **E2E-01**: Demonstrate creation → read → copy/tool → mock model request → attempted HTTP exfiltration using a simulated agent and loopback only.
-- [ ] **E2E-02**: Test major failure paths, false positives/negatives, concurrency, attribution and network blind spots.
+- [x] **E2E-01**: Demonstrate creation → read → copy/tool → mock model request → attempted HTTP exfiltration using a simulated agent and loopback only.
+- [x] **E2E-02**: Test major failure paths, false positives/negatives, concurrency, attribution and network blind spots.
 
 ### Release hardening and documentation
 
@@ -53,8 +53,8 @@ Defined: 2026-10-03
 | NET-01 | Phase 3 | Complete |
 | NET-02 | Phase 3 | Complete |
 | NET-03 | Phase 3 | Complete |
-| E2E-01 | Phase 4 | Pending |
-| E2E-02 | Phase 4 | Pending |
+| E2E-01 | Phase 4 | Complete |
+| E2E-02 | Phase 4 | Complete |
 | REL-01 | Phase 5 | Pending |
 | REL-02 | Phase 5 | Pending |
 | REL-03 | Phase 5 | Pending |
