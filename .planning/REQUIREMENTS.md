@@ -59,4 +59,4 @@ Defined: 2026-10-03
 | REL-02 | Phase 5 | Pending |
 | REL-03 | Phase 5 | Pending |
 
-All 16 requirements mapped. No remote publication is authorized.
+All 15 requirements mapped. No remote publication is authorized.
