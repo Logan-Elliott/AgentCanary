@@ -11,6 +11,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from . import __version__
+from .demo import DemoError, describe, run_demo
 from .generator import PROFILES, create_canary, seed
 from .models import Action
 from .monitors import InotifyMonitor, MonitorError
@@ -91,6 +92,12 @@ def build_parser() -> argparse.ArgumentParser:
     proxy.add_argument("--max-workers", type=int, default=8, help="maximum simultaneous requests")
     types = commands.add_parser("types", help="list synthetic artifact types and profiles")
     types.add_argument("--json", action="store_true")
+    demo = commands.add_parser("demo", help="run an isolated synthetic lifecycle on loopback")
+    demo.add_argument("--directory", help="new output directory (default: unique directory in cwd)")
+    demo.add_argument(
+        "--timeout", type=float, default=15, help="child/evidence deadline in seconds"
+    )
+    demo.add_argument("--json", action="store_true", help="output summary without token values")
     return parser
 
 
@@ -134,6 +141,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command == "demo":
+            if args.config is not None:
+                raise ValueError("demo uses its isolated default policy; --config is unsupported")
+            result = run_demo(args.directory, timeout=args.timeout)
+            print(
+                redact_text(json.dumps(result.to_dict(), sort_keys=True))
+                if args.json
+                else describe(result)
+            )
+            return 0
         policy = load_policy(args.config) if args.config is not None else Policy()
         if args.command == "types":
             catalog = {"types": [*BUILTINS, "custom"], "profiles": list(PROFILES)}
@@ -191,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
             for record in records:
                 print(redact_text(f"Created {record.kind}: {record.path} ({record.id})"))
         return 0
-    except (OSError, ValueError, StoreError, MonitorError, NetworkError) as exc:
+    except (OSError, ValueError, StoreError, MonitorError, NetworkError, DemoError) as exc:
         message = redact_text(str(exc))
         message = "".join(c if ord(c) >= 32 and ord(c) != 127 else "?" for c in message)
         print(f"agentcanary: {message}", file=sys.stderr)

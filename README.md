@@ -104,7 +104,18 @@ JSON reports contain `events` and `count`; JSONL is one event per line. Events a
 
 ## Local end-to-end demonstration
 
-The integration phase supplies a simulated agent that reads a seeded canary, copies/passes it to a real local tool, includes it in mock model input, and makes an HTTP attempt to the blocking endpoint. Every application connection stays on loopback. See [examples](examples/) for the demonstration and SDK entry points.
+```bash
+agentcanary demo --directory ./demo-run
+agentcanary --state-dir ./demo-run/state report --format jsonl
+# Or choose a new unique output directory automatically:
+agentcanary demo --json
+```
+
+The demo seeds one synthetic canary, starts a passive Linux monitor and the blocking HTTP endpoint, then runs a real Python child using the installed package. The child reads and copies the artifact, passes its bytes to a local subprocess tool, observes mock model input, and makes two HTTP requests that must return 403. All connections stay on loopback; `.invalid` destinations are request labels only.
+
+The directory must be new and its parent must exist; existing directories and symlinks are refused. Each run retains `workspace/`, private `state/`, token-free `events.jsonl`, `report.txt` and `summary.json`. `--state-dir` does not change the demo's isolated state location; `--config` is rejected. `--timeout` bounds child execution and evidence collection (default 15 seconds), with separate bounded worker shutdown. Failure returns nonzero and retains available evidence without claiming completion.
+
+All six lifecycle actions must be present. SDK events identify the child caller PID; passive and HTTP events keep unknown actor PIDs. Tool input and mock model input do not imply semantic use or provider delivery. The controlled tool receipt confirms receipt of the fixture bytes separately. Run correlation does not establish causality between independently scheduled sensors.
 
 ## Development and verification
 
