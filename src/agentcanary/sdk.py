@@ -17,6 +17,7 @@ from uuid import uuid4
 from .filesystem import UnsafePathError, absolute_path, open_directory
 from .matching import DEFAULT_MAX_BYTES, PayloadTooLarge, TokenMatcher, bounded_bytes
 from .models import TOKEN_PATTERN, Action, Event, Scalar
+from .network import Headers, HTTPInspector
 from .protocols import EventSink
 from .store import Store
 
@@ -81,6 +82,34 @@ class Observer:
         matcher = TokenMatcher(self.store.canaries(), max_bytes=self.max_bytes)
         with self._lock:
             self._matcher = matcher
+
+    def _http_inspector(self) -> HTTPInspector:
+        with self._lock:
+            matcher = self._matcher
+        return HTTPInspector(
+            self.store,
+            sink=self.sink,
+            run_id=self.run_id,
+            max_bytes=self.max_bytes,
+            source="sdk",
+            matcher=matcher,
+        )
+
+    def observe_http(
+        self, method: str, url: str, *, headers: Headers = (), body: bytes | str = b""
+    ) -> tuple[Event, ...]:
+        """Inspect explicit pre-TLS HTTP input without sending it."""
+        return self._http_inspector().inspect(method, url, headers=headers, body=body)
+
+    def observe_model(self, payload: bytes | str, *, destination: str) -> tuple[Event, ...]:
+        """Inspect supplied model input before TLS, with caller PID."""
+        return self._http_inspector().inspect_model(payload, destination=destination)
+
+    def observe_embedding(self, payload: bytes | str, *, destination: str) -> tuple[Event, ...]:
+        """Inspect embedding input before TLS, with caller PID."""
+        return self._http_inspector().inspect_model(
+            payload, destination=destination, embedding=True
+        )
 
     def _health(self, reason: str, operation: str) -> None:
         self.sink.record(

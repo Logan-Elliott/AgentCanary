@@ -1,9 +1,10 @@
 """Public, typed contracts for local synthetic-canary evidence."""
 
 from .generator import SeedSpec, create_canary, seed
-from .matching import MatchResult, PayloadTooLarge, TokenMatcher
+from .matching import DecodeError, EncodedMatchResult, MatchResult, PayloadTooLarge, TokenMatcher
 from .models import Action, Canary, Event
 from .monitors import InotifyMonitor, MonitorError
+from .network import HTTPInspector
 from .protocols import EventSink, Monitor
 from .sdk import Observer, ToolInvocationError, ToolResult
 from .store import Store, StoreError
@@ -24,6 +25,9 @@ __all__ = [
     "GeneratedCanary",
     "generate",
     "MatchResult",
+    "EncodedMatchResult",
+    "DecodeError",
+    "HTTPInspector",
     "PayloadTooLarge",
     "TokenMatcher",
     "Observer",
