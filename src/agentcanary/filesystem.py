@@ -16,7 +16,9 @@ def absolute_path(path: str | Path) -> Path:
     value = Path(path)
     if ".." in value.parts:
         raise UnsafePathError("parent traversal is not allowed")
-    return Path(os.path.abspath(value))
+    # POSIX permits a distinct // anchor; our descriptor traversal starts at /.
+    # Keep lexical containment checks consistent with that traversal.
+    return Path("/" + os.path.abspath(value).lstrip("/"))
 
 
 def open_directory(path: str | Path, *, create: bool = False, private: bool = False) -> int:

@@ -123,28 +123,37 @@ def seed(
             parent_fd = os.dup(root_fd)
             try:
                 for part in parts[:-1]:
+                    rollback_fd = os.dup(parent_fd)
                     try:
                         os.mkdir(part, mode=0o700, dir_fd=parent_fd)
                     except FileExistsError:
-                        pass
+                        os.close(rollback_fd)
+                    except BaseException:
+                        os.close(rollback_fd)
+                        raise
                     else:
-                        directories.append((os.dup(parent_fd), part))
+                        directories.append((rollback_fd, part))
                     child = os.open(
                         part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd
                     )
                     os.close(parent_fd)
                     parent_fd = child
-                file_fd = os.open(
-                    parts[-1],
-                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                    0o600,
-                    dir_fd=parent_fd,
-                )
+                # Reserve cleanup resources before creating the file. A dup()
+                # failure after O_EXCL would otherwise leave an untracked file.
+                rollback_fd = os.dup(parent_fd)
+                try:
+                    file_fd = os.open(
+                        parts[-1],
+                        os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                        0o600,
+                        dir_fd=parent_fd,
+                    )
+                except BaseException:
+                    os.close(rollback_fd)
+                    raise
                 try:
                     info = os.fstat(file_fd)
-                    created.append(
-                        _CreatedFile(os.dup(parent_fd), parts[-1], info.st_dev, info.st_ino)
-                    )
+                    created.append(_CreatedFile(rollback_fd, parts[-1], info.st_dev, info.st_ino))
                     os.fchmod(file_fd, 0o600)
                     with os.fdopen(file_fd, "wb", closefd=False) as stream:
                         stream.write(artifact.content.encode("utf-8"))
@@ -163,7 +172,9 @@ def seed(
     finally:
         if not committed:
             for entry in reversed(created):
-                with suppress(FileNotFoundError):
+                # Disk errors can affect cleanup as well as writes. Continue
+                # cleaning other entries, preserving the original failure.
+                with suppress(OSError):
                     info = os.stat(entry.name, dir_fd=entry.parent_fd, follow_symlinks=False)
                     if (info.st_dev, info.st_ino) == (entry.device, entry.inode):
                         os.unlink(entry.name, dir_fd=entry.parent_fd)
@@ -172,10 +183,13 @@ def seed(
                 with suppress(OSError):
                     os.rmdir(name, dir_fd=fd)
         for entry in created:
-            os.close(entry.parent_fd)
+            with suppress(OSError):
+                os.close(entry.parent_fd)
         for fd, _ in directories:
-            os.close(fd)
-        os.close(root_fd)
+            with suppress(OSError):
+                os.close(fd)
+        with suppress(OSError):
+            os.close(root_fd)
 
 
 def create_canary(
