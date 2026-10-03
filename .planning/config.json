@@ -19,5 +19,14 @@
   },
   "ship": {
     "pr_body_sections": []
+  },
+  "effort": {
+    "default": "xhigh",
+    "routing_tier_defaults": {
+      "light": "xhigh",
+      "standard": "xhigh",
+      "heavy": "xhigh"
+    },
+    "agent_overrides": {}
   }
 }
