@@ -11,8 +11,13 @@
     "auto_advance": true,
     "_auto_chain_active": true,
     "compact_content": true,
-    "nyquist_validation": false
+    "nyquist_validation": false,
+    "use_worktrees": false
   },
-  "plan_review": {"source_grounding": true},
-  "ship": {"pr_body_sections": []}
+  "plan_review": {
+    "source_grounding": true
+  },
+  "ship": {
+    "pr_body_sections": []
+  }
 }
