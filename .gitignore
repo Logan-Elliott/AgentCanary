@@ -7,3 +7,9 @@ __pycache__/
 .env.*
 !.env.example
 browser-artifacts/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+.agentcanary/

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentcanary"
+version = "0.1.0"
+description = "Synthetic canaries and local evidence for AI-agent workspaces"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Logan-Elliott", email = "dev.loganelliott@gmail.com"}]
+dependencies = []
+
+[project.scripts]
+agentcanary = "agentcanary.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "mypy>=1.15,<2", "build>=1.2,<2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentcanary"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/agentcanary", "tests", "pyproject.toml", "README.md", "uv.lock"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.coverage.run]
+branch = true
+source = ["agentcanary"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
