@@ -205,7 +205,11 @@ class InotifyMonitor:
             with os.fdopen(fd, "rb", closefd=False) as stream:
                 data = stream.read(DEFAULT_MAX_BYTES + 1)
             after = os.fstat(fd)
-            if len(data) > DEFAULT_MAX_BYTES or hashlib.sha256(data).hexdigest() != canary.sha256:
+            if (
+                len(data) > DEFAULT_MAX_BYTES
+                or hashlib.sha256(data).hexdigest() != canary.sha256
+                or canary.token.encode("ascii") not in data
+            ):
                 raise ValueError("altered_file")
             if _version(before) != _version(after):
                 raise ValueError("changed_during_snapshot")
@@ -267,7 +271,11 @@ class InotifyMonitor:
                     self._thread.join(10)
                 if not self.running:
                     self._close()
-                self._error = self._error or "monitor startup failed"
+                self._error = self._error or (
+                    "monitor startup failed"
+                    if sys.platform.startswith("linux")
+                    else "inotify monitoring requires Linux"
+                )
                 with suppress(Exception):
                     self._health("startup_failed")
                 raise MonitorError(self._error) from None
