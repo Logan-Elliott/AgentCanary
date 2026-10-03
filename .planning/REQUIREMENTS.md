@@ -6,10 +6,10 @@ Defined: 2026-10-03
 
 ### Foundation and safe canary lifecycle
 
-- [ ] **CORE-01**: Generate uniquely identified, unmistakably synthetic, nonfunctional AWS, OpenAI, Anthropic, kubeconfig, SSH, env, database, and payroll canaries.
-- [ ] **CORE-02**: Seed realistic profiles and safe custom text templates without overwriting files or following symlinks.
-- [ ] **CORE-03**: Persist creation and structured events atomically with timestamps, identifiers, action, source, optional process and destination.
-- [ ] **CORE-04**: Provide installable Python package, useful CLI help, create/seed/report, text/JSON/JSONL reports, and extension contracts.
+- [x] **CORE-01**: Generate uniquely identified, unmistakably synthetic, nonfunctional AWS, OpenAI, Anthropic, kubeconfig, SSH, env, database, and payroll canaries.
+- [x] **CORE-02**: Seed realistic profiles and safe custom text templates without overwriting files or following symlinks.
+- [x] **CORE-03**: Persist creation and structured events atomically with timestamps, identifiers, action, source, optional process and destination.
+- [x] **CORE-04**: Provide installable Python package, useful CLI help, create/seed/report, text/JSON/JSONL reports, and extension contracts.
 
 ### Filesystem and attributed observations
 
@@ -43,10 +43,10 @@ Defined: 2026-10-03
 
 | Requirement | Phase | Status |
 |---|---|---|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
+| CORE-01 | Phase 1 | Complete |
+| CORE-02 | Phase 1 | Complete |
+| CORE-03 | Phase 1 | Complete |
+| CORE-04 | Phase 1 | Complete |
 | OBS-01 | Phase 2 | Pending |
 | OBS-02 | Phase 2 | Pending |
 | OBS-03 | Phase 2 | Pending |
