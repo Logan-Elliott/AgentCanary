@@ -39,7 +39,8 @@ def open_directory(path: str | Path, *, create: bool = False, private: bool = Fa
                 raise UnsafePathError("state directory must belong to the current user")
             if absolute == Path("/"):
                 raise UnsafePathError("state directory cannot be the filesystem root")
-            os.fchmod(fd, 0o700)
+            if stat.S_IMODE(info.st_mode) & 0o077:
+                raise UnsafePathError("state directory must be private (mode 0700)")
         return fd
     except BaseException:
         os.close(fd)

@@ -49,7 +49,7 @@ class Store:
 
     @contextmanager
     def _connection(self) -> Iterator[sqlite3.Connection]:
-        fd = open_directory(self.state_dir)
+        fd = open_directory(self.state_dir, private=True)
         connection: sqlite3.Connection | None = None
         try:
             check_private_file(fd, DATABASE_NAME)
