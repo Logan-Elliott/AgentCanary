@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v0.1
 milestone_name: Local release
-current_phase: 1
+current_phase: 2
 status: phase_complete
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-10-03T21:46:41.637Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-10-03T22:23:55.817Z"
 last_activity: 2026-10-03
-last_activity_desc: Phase 1 verified with 42 passing tests and a clean wheel installation
-state_head: 7ea2b61f0fd0bac6fddf026e45e7178474203cdc
+last_activity_desc: Phase 2 verified with 83 passing tests and clean quality checks
+state_head: 25f3e2044034998c4be08c1bacbae01952503c96
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -23,15 +23,15 @@ progress:
 
 See: .planning/PROJECT.md
 Core value: traceable creation, access, propagation and attempted exfiltration.
-Current focus: Phase 1 complete; Phase 2 — filesystem and attributed observations is next.
+Current focus: Phase 2 complete; Phase 3 — HTTP and model request inspection is next.
 
 ## Current Position
 
-Phase: 1 of 5
+Phase: 2 of 5
 Plan: 1 of 1
-Status: Phase 1 complete and verified
-Last activity: 2026-10-03 — 42 tests, lint/format, strict typing, build and clean wheel smoke passed
-Progress: [██░░░░░░░░] 20%
+Status: Phase 2 complete and verified
+Last activity: 2026-10-03 — 83 tests, lint/format and strict typing passed
+Progress: [████░░░░░░] 40%
 
 ## Decisions
 
@@ -44,6 +44,8 @@ Progress: [██░░░░░░░░] 20%
 - [Phase 01]: Store uses independent WAL/FULL SQLite connections; record(Event) returns the persisted ingestion sequence.
 - [Phase 01]: Runtime is stdlib-only, with project-local uv tools and a committed lockfile.
 - [Phase 01]: Create accepts positional KIND and optional --output; reports enrich events with registry canary_type.
+- [Phase 02]: Passive inotify reads retain pid=None; SDK PID identifies the caller and tool input is an invocation attempt.
+- [Phase 02]: All snapshot validation precedes watches; changes invalidate coverage until stop/start. Observer.refresh explicitly updates issued-marker matching.
 
 ## Blockers/Concerns
 
@@ -51,8 +53,8 @@ None. Known capability limits will be documented and tested, not concealed.
 
 ## Session Continuity
 
-**Last session:** 2026-10-03T21:46:41.615Z
-**Stopped at:** Completed 01-01-PLAN.md
+**Last session:** 2026-10-03T22:23:55.791Z
+**Stopped at:** Completed 02-01-PLAN.md
 **Resume file:** None
 
 Resume: read ROADMAP.md and the first incomplete phase's CONTEXT/PLAN/SUMMARY.
@@ -62,3 +64,4 @@ Resume: read ROADMAP.md and the first incomplete phase's CONTEXT/PLAN/SUMMARY.
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 24min | 3 tasks | 19 files |
+| Phase 02 P01 | 30min | 3 tasks | 9 files |

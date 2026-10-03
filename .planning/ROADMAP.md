@@ -7,7 +7,7 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 ## Phases
 
 - [x] **Phase 1: Foundation and safe canary lifecycle** — Create, seed and report synthetic canaries safely using a durable extensible event model.
-- [ ] **Phase 2: Filesystem and attributed observations** — Observe file access and explicitly attributed read/copy/tool interactions with honest source evidence.
+- [x] **Phase 2: Filesystem and attributed observations** — Observe file access and explicitly attributed read/copy/tool interactions with honest source evidence.
 - [ ] **Phase 3: HTTP and model request inspection** — Detect token propagation through HTTP and model requests with bounded parsing and local-only interception.
 - [ ] **Phase 4: End-to-end demo and adversarial integration** — Prove the complete canary chain with a real subprocess and loopback HTTP and exercise failure boundaries.
 - [ ] **Phase 5: Release hardening and documentation** — Verify installation, audit the implementation, fix weaknesses and document a polished local release.
@@ -36,8 +36,8 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 2. Provide cooperative SDK observations for read, copy, tool input and embedding/model input with PID and run correlation.
 3. Keep monitoring and event recording safe under concurrent processes, file replacement, failures and shutdown.
 
-**Plans:** 1 plan
-- [ ] 02-01-PLAN.md — Filesystem and attributed observations
+**Plans:** 1/1 plans executed
+- [x] 02-01-PLAN.md — Filesystem and attributed observations
 
 ### Phase 3: HTTP and model request inspection
 
@@ -82,7 +82,7 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 1. Foundation and safe canary lifecycle | 1/1 | Complete | 2026-10-03 |
-| 2. Filesystem and attributed observations | 0/1 | Not started | - |
+| 2. Filesystem and attributed observations | 1/1 | Complete | 2026-10-03 |
 | 3. HTTP and model request inspection | 0/1 | Not started | - |
 | 4. End-to-end demo and adversarial integration | 0/1 | Not started | - |
 | 5. Release hardening and documentation | 0/1 | Not started | - |

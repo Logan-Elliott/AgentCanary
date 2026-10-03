@@ -13,9 +13,9 @@ Defined: 2026-10-03
 
 ### Filesystem and attributed observations
 
-- [ ] **OBS-01**: Detect real Linux file reads without privileges; report health and missing watches; never fabricate process attribution.
-- [ ] **OBS-02**: Provide cooperative SDK observations for read, copy, tool input and embedding/model input with PID and run correlation.
-- [ ] **OBS-03**: Keep monitoring and event recording safe under concurrent processes, file replacement, failures and shutdown.
+- [x] **OBS-01**: Detect real Linux file reads without privileges; report health and missing watches; never fabricate process attribution.
+- [x] **OBS-02**: Provide cooperative SDK observations for read, copy, tool input and embedding/model input with PID and run correlation.
+- [x] **OBS-03**: Keep monitoring and event recording safe under concurrent processes, file replacement, failures and shutdown.
 
 ### HTTP and model request inspection
 
@@ -47,9 +47,9 @@ Defined: 2026-10-03
 | CORE-02 | Phase 1 | Complete |
 | CORE-03 | Phase 1 | Complete |
 | CORE-04 | Phase 1 | Complete |
-| OBS-01 | Phase 2 | Pending |
-| OBS-02 | Phase 2 | Pending |
-| OBS-03 | Phase 2 | Pending |
+| OBS-01 | Phase 2 | Complete |
+| OBS-02 | Phase 2 | Complete |
+| OBS-03 | Phase 2 | Complete |
 | NET-01 | Phase 3 | Pending |
 | NET-02 | Phase 3 | Pending |
 | NET-03 | Phase 3 | Pending |
