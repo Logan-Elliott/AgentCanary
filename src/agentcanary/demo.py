@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import http.client
 import json
@@ -113,6 +114,40 @@ def _stop_child(child: subprocess.Popen[bytes]) -> None:
     # Also cover a child that failed after starting a tool but before waiting.
     with suppress(ProcessLookupError):
         os.killpg(child.pid, signal.SIGKILL)
+
+
+def _own_descendants() -> None:
+    # Only the disposable child becomes a Linux subreaper, never the SDK caller.
+    # Orphaned tool grandchildren can then be waited for instead of leaking zombies.
+    libc = ctypes.CDLL(None, use_errno=True)
+    prctl = libc.prctl
+    prctl.argtypes = [ctypes.c_int, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong]
+    prctl.restype = ctypes.c_int
+    if prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER
+        raise DemoError("child descendant ownership unavailable")
+
+
+def _reap_tools() -> None:
+    # Called only inside our dedicated child, so every descendant is owned here.
+    # Ignore repeated interrupts while terminating and reaping those descendants.
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    deadline = time.monotonic() + 1.5
+    children = Path(f"/proc/self/task/{os.getpid()}/children")
+    while True:
+        try:
+            pid, _ = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return
+        if pid:
+            continue
+        if time.monotonic() >= deadline:
+            raise DemoError("tool descendants did not stop")
+        for value in children.read_text().split():
+            with suppress(ProcessLookupError):
+                os.kill(int(value), signal.SIGKILL)
+        # After parents exit, their children are adopted and killed on the next pass.
+        time.sleep(0.005)
 
 
 def _child_command(directory: Path, run_id: str, port: int) -> list[str]:
@@ -252,16 +287,23 @@ def run_demo(directory: str | Path | None = None, *, timeout: float = 15.0) -> D
     except BaseException as exc:
         # Best effort reports must not replace a sink/shutdown error with success.
         with suppress(Exception):
-            _export(
-                target,
-                store,
-                {"status": "failed", "run_id": run_id, "error_code": type(exc).__name__},
+            _write(
+                target / "summary.json",
+                json.dumps(
+                    {"status": "failed", "run_id": run_id, "error_code": type(exc).__name__}
+                ),
             )
+        if store is not None:
+            for name, format in (("events.jsonl", "jsonl"), ("report.txt", "text")):
+                with suppress(Exception):
+                    _write(
+                        target / name,
+                        render_report(store.events(), format=format, canaries=store.canaries()),
+                    )
         if not isinstance(exc, Exception):
             raise
-        raise DemoError(
-            f"demo failed ({type(exc).__name__}); evidence retained at {target}"
-        ) from None
+        reason = str(exc) if isinstance(exc, DemoError) else type(exc).__name__
+        raise DemoError(f"demo failed ({reason}); evidence retained at {target}") from None
 
 
 def describe(result: DemoResult) -> str:
@@ -321,7 +363,11 @@ def _main() -> int:
     args = parser.parse_args()
     try:
         with _termination_handler():
-            _simulate(args.child, args.run_id, args.port)
+            _own_descendants()
+            try:
+                _simulate(args.child, args.run_id, args.port)
+            finally:
+                _reap_tools()
         return 0
     except (Exception, KeyboardInterrupt):
         return 2
