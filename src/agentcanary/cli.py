@@ -15,6 +15,8 @@ from .generator import PROFILES, create_canary, seed
 from .models import Action
 from .monitors import InotifyMonitor, MonitorError
 from .network import BlockingProxy, NetworkError
+from .policy import Policy, PolicySink, load_policy
+from .protocols import EventSink
 from .report import redact_text, render_report
 from .store import Store, StoreError
 from .templates import BUILTINS, MAX_TEMPLATE_BYTES
@@ -36,6 +38,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"agentcanary {__version__}")
     parser.add_argument("--state-dir", default=".agentcanary", help="private local state directory")
+    parser.add_argument(
+        "--config", help="explicit TOML policy file; annotations never permit forwarding"
+    )
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("create", help="create one canary without overwriting a file")
     create.add_argument("kind", choices=[*BUILTINS, "custom"], help="synthetic artifact type")
@@ -58,6 +63,11 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--run-id", help="filter by correlation label")
     report.add_argument("--after-seq", type=int, default=0, help="show events after this sequence")
     report.add_argument("--limit", type=int, help="maximum number of events")
+    report.add_argument(
+        "--hide-policy",
+        action="store_true",
+        help="hide ignored/allowlisted observations; retain audit storage",
+    )
     monitor = commands.add_parser("monitor", help="watch a registered artifact snapshot on Linux")
     monitor.add_argument("root", help="workspace directory; seed before starting")
     monitor.add_argument("--run-id", help="correlation label")
@@ -84,14 +94,21 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _monitor(store: Store, root: str, run_id: str | None, duration: float | None) -> int:
+def _monitor(
+    store: Store,
+    root: str,
+    run_id: str | None,
+    duration: float | None,
+    *,
+    sink: EventSink | None = None,
+) -> int:
     if duration is not None and (not math.isfinite(duration) or duration <= 0):
         raise ValueError("duration must be positive and finite")
     stopped = threading.Event()
     previous = signal.getsignal(signal.SIGTERM)
     signal.signal(signal.SIGTERM, lambda signum, frame: stopped.set())
     try:
-        with InotifyMonitor(store, root, run_id=run_id) as monitor:
+        with InotifyMonitor(store, root, run_id=run_id, sink=sink) as monitor:
             print(
                 json.dumps(
                     {
@@ -117,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        policy = load_policy(args.config) if args.config is not None else Policy()
         if args.command == "types":
             catalog = {"types": [*BUILTINS, "custom"], "profiles": list(PROFILES)}
             if args.json:
@@ -134,14 +152,20 @@ def main(argv: list[str] | None = None) -> int:
                 after_seq=args.after_seq,
                 limit=args.limit,
             )
-            output = render_report(events, format=args.format, canaries=store.canaries())
+            output = render_report(
+                events, format=args.format, canaries=store.canaries(), hide_policy=args.hide_policy
+            )
             if output:
                 print(output)
             return 0
         if args.command == "monitor":
-            return _monitor(Store(args.state_dir), args.root, args.run_id, args.duration)
+            store = Store(args.state_dir)
+            return _monitor(
+                store, args.root, args.run_id, args.duration, sink=PolicySink(store, policy)
+            )
         if args.command in ("proxy", "serve"):
-            return _proxy(Store(args.state_dir), args)
+            store = Store(args.state_dir)
+            return _proxy(store, args, sink=PolicySink(store, policy))
         if args.command == "create":
             if (args.kind == "custom") != bool(args.template):
                 raise ValueError("custom type and --template must be used together")
@@ -177,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         return 130
 
 
-def _proxy(store: Store, args: argparse.Namespace) -> int:
+def _proxy(store: Store, args: argparse.Namespace, *, sink: EventSink | None = None) -> int:
     if args.duration is not None and (not math.isfinite(args.duration) or args.duration <= 0):
         raise ValueError("duration must be positive and finite")
     stopped = threading.Event()
@@ -191,6 +215,7 @@ def _proxy(store: Store, args: argparse.Namespace) -> int:
             run_id=args.run_id,
             read_timeout=args.read_timeout,
             max_workers=args.max_workers,
+            sink=sink,
         ) as proxy:
             print(
                 json.dumps(

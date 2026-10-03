@@ -37,7 +37,7 @@ def safe_origin(url: str) -> str:
         parsed = urlsplit(url)
         host = parsed.hostname
         port = parsed.port
-        if parsed.scheme not in ("http", "https") or not host:
+        if parsed.scheme not in ("http", "https") or not host or "%" in host:
             raise ValueError
         host = re.sub(TOKEN_PATTERN.pattern, "redacted", host, flags=re.IGNORECASE)
         if ":" in host:
@@ -115,6 +115,11 @@ class HTTPInspector:
         with self._lock:
             self._matcher = matcher
 
+    @property
+    def registry_count(self) -> int:
+        with self._lock:
+            return self._matcher.registry_count
+
     def health(self, reason: str) -> Event:
         return self._record(
             Event(
@@ -183,10 +188,17 @@ class HTTPInspector:
         if method not in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
             self.health("unsupported_method")
             raise ValueError("unsupported HTTP method")
-        pairs = list(headers.items()) if isinstance(headers, Mapping) else list(headers)
-        if len(pairs) > 64:
+        if len(headers) > 64:
             self.health("header_limit")
             raise PayloadTooLarge("HTTP header limit exceeded")
+        pairs = list(headers.items()) if isinstance(headers, Mapping) else list(headers)
+        try:
+            header_bytes = sum(len(bounded_bytes(item, 65536)) for pair in pairs for item in pair)
+            if header_bytes > 65536:
+                raise PayloadTooLarge("HTTP header byte limit exceeded")
+        except PayloadTooLarge:
+            self.health("header_limit")
+            raise
         lowered: dict[str, str] = {}
         for name, value in pairs:
             key = name.lower()
@@ -361,19 +373,26 @@ class BlockingProxy:
             listener.listen(self.max_workers)
             listener.settimeout(0.1)
             self.inspector.refresh()
-            if not self.inspector.store.canaries():
+            if not self.inspector.registry_count:
                 self.inspector.health("empty_registry")
             self.port = listener.getsockname()[1]
             self._listener = listener
             self._thread = threading.Thread(
                 target=self._accept, name="agentcanary-http", daemon=True
             )
-            self._thread.start()
             self.ready.set()
-        except Exception:
+            self._thread.start()
+            self.check()
+        except BaseException as exc:
+            self._stopped.set()
+            self.ready.clear()
             listener.close()
+            if self._thread is not None and self._thread.ident is not None:
+                self._thread.join(2)
             self._listener = None
             self._thread = None
+            if not isinstance(exc, Exception):
+                raise
             raise NetworkError("HTTP listener startup failed") from None
 
     def stop(self) -> None:
@@ -459,13 +478,13 @@ class BlockingProxy:
                             break
                         self._workers[worker] = connection
                         worker.start()
-                except Exception:
+                except BaseException:
                     with self._lock:
                         del self._workers[worker]
                     connection.close()
                     self._slots.release()
                     raise
-        except Exception:
+        except BaseException:
             if not self._stopped.is_set():
                 self._fail("listener_or_sink_failure")
         finally:
@@ -585,7 +604,7 @@ class BlockingProxy:
                     self.inspector.health("connection_failed")
                 status = 400
             self._respond(connection, status)
-        except Exception:
+        except BaseException:
             self._fail("event_sink_or_worker_failure")
             self._respond(connection, 500)
         finally:

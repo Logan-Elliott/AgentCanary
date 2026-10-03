@@ -7,8 +7,10 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 
 import pytest
 
@@ -27,10 +29,17 @@ def exchange(proxy, wire, *, shutdown=True):
         client.connect((proxy.host, proxy.port))
         client.sendall(wire)
         if shutdown:
-            client.shutdown(socket.SHUT_WR)
+            # Saturated listeners may have already closed after their immediate 503.
+            with suppress(OSError):
+                client.shutdown(socket.SHUT_WR)
         response = b""
         while chunk := client.recv(4096):
             response += chunk
+            if b"\r\n\r\n" in response:
+                header, body = response.split(b"\r\n\r\n", 1)
+                length = int(header.split(b"Content-Length: ")[1].split(b"\r\n")[0])
+                if len(body) == length:
+                    break
         return int(response.split(b" ")[1]), response
 
 
@@ -226,7 +235,7 @@ def test_concurrent_real_requests_are_retained_once(issued):
     assert len(store.events(action=Action.MODEL_REQUEST)) == 24
 
 
-@pytest.mark.parametrize("error", [ValueError, OSError, RuntimeError])
+@pytest.mark.parametrize("error", [ValueError, OSError, RuntimeError, KeyboardInterrupt])
 def test_sink_failures_stop_listener_without_reflection(issued, error, capsys):
     store, canary = issued
 
@@ -263,6 +272,51 @@ def test_empty_registry_and_validation_are_explicit(tmp_path):
     ):
         with pytest.raises(ValueError):
             BlockingProxy(store, **kwargs)
+
+
+def test_ipv6_loopback_request_and_host_are_plain_transport_fields(issued):
+    store, canary = issued
+    with BlockingProxy(store, host="::1") as proxy:
+        assert proxy.url.startswith("http://[::1]:")
+        assert post(proxy, "/v1/responses", canary.token) == 403
+    event = store.events(action=Action.EXFILTRATION)[0]
+    assert event.destination.startswith("http://[::1]:")
+    assert not store.events(action=Action.MONITOR_HEALTH)
+
+
+@pytest.mark.parametrize("failure", [RuntimeError, KeyboardInterrupt])
+def test_listener_startup_failure_releases_socket(issued, monkeypatch, failure):
+    store, _ = issued
+    proxy = BlockingProxy(store)
+
+    def fail_start(thread):
+        raise failure("PRIVATE_STARTUP")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(threading.Thread, "start", fail_start)
+        with pytest.raises(NetworkError if failure is RuntimeError else KeyboardInterrupt):
+            proxy.start()
+    proxy.stop()
+    assert not proxy.ready.is_set()
+    assert not proxy.running
+    with BlockingProxy(store, port=proxy.port):
+        pass
+
+
+def test_absolute_deadline_does_not_extend_for_trickled_data(issued):
+    store, _ = issued
+    with (
+        BlockingProxy(store, read_timeout=0.15) as proxy,
+        socket.create_connection((proxy.host, proxy.port), timeout=2) as client,
+    ):
+        client.sendall(b"GET / HTTP/1.1\r\nHost: x\r\nX: ")
+        started = time.monotonic()
+        for _ in range(3):
+            client.sendall(b"x")
+            time.sleep(0.05)
+        assert b"408" in client.recv(4096)
+        assert time.monotonic() - started < 0.5
+    assert store.events(action=Action.MONITOR_HEALTH)[-1].metadata["reason"] == "read_timeout"
 
 
 @pytest.mark.parametrize("ending", ["duration", "term", "interrupt"])

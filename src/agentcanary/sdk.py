@@ -18,6 +18,7 @@ from .filesystem import UnsafePathError, absolute_path, open_directory
 from .matching import DEFAULT_MAX_BYTES, PayloadTooLarge, TokenMatcher, bounded_bytes
 from .models import TOKEN_PATTERN, Action, Event, Scalar
 from .network import Headers, HTTPInspector
+from .policy import Policy, PolicySink
 from .protocols import EventSink
 from .store import Store
 
@@ -68,9 +69,13 @@ class Observer:
         run_id: str | None = None,
         sink: EventSink | None = None,
         max_bytes: int = DEFAULT_MAX_BYTES,
+        policy: Policy | None = None,
     ) -> None:
         self.store = store
-        self.sink = sink if sink is not None else store
+        selected_sink = sink if sink is not None else store
+        self.sink: EventSink = (
+            PolicySink(selected_sink, policy) if policy is not None else selected_sink
+        )
         self.run_id = run_id if run_id is not None else str(uuid4())
         self.max_bytes = max_bytes
         self._lock = threading.Lock()
@@ -252,11 +257,13 @@ class Observer:
         timeout: float = 30.0,
     ) -> ToolResult:
         label = self._tool_label(tool)
+        if isinstance(argv, (str, bytes)):
+            raise ValueError("argv must be a nonempty sequence of argument strings")
+        arguments = tuple(argv)
         if (
-            isinstance(argv, (str, bytes))
-            or not argv
-            or not all(isinstance(arg, str) and "\0" not in arg for arg in argv)
-            or not argv[0]
+            not arguments
+            or not all(isinstance(arg, str) and "\0" not in arg for arg in arguments)
+            or not arguments[0]
         ):
             raise ValueError("argv must be a nonempty sequence of argument strings")
         if not math.isfinite(timeout) or timeout <= 0:
@@ -264,9 +271,9 @@ class Observer:
         try:
             data = bounded_bytes(input if input is not None else b"", self.max_bytes)
             # Bound total argv before joining/encoding; separators prevent cross-argument matches.
-            if sum(len(arg) + 1 for arg in argv) + len(data) > self.max_bytes:
+            if sum(len(arg) + 1 for arg in arguments) + len(data) > self.max_bytes:
                 raise PayloadTooLarge("tool input exceeds observation byte limit")
-            payload = bounded_bytes("\0".join(argv), self.max_bytes) + b"\0" + data
+            payload = bounded_bytes("\0".join(arguments), self.max_bytes) + b"\0" + data
             events = self.observe(
                 Action.TOOL_USE,
                 payload,
@@ -278,7 +285,7 @@ class Observer:
             raise
         try:
             result = subprocess.run(
-                list(argv),
+                list(arguments),
                 input=data,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

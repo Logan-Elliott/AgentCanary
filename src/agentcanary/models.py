@@ -57,6 +57,8 @@ METADATA_KEYS = frozenset(
         "count",
         "detail",
         "sha256",
+        "policy_decision",
+        "policy_rule",
     }
 )
 

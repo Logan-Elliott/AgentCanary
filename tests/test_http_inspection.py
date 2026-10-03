@@ -70,7 +70,7 @@ def test_decoding_limits_and_invalid_inputs_are_visible(issued):
         ([canary.token], {"max_work_bytes": 1}, "decode_bytes"),
         ([b'{"a":'], {}, "invalid_json"),
         ([b'"\\ud800"'], {}, "invalid_json_unicode"),
-        ([json.dumps([0] * 300)], {}, "json_nodes"),
+        ([json.dumps(["a"] * 150)], {"max_candidates": 128}, "json_nodes"),
     ]:
         with pytest.raises(DecodeError, match=reason):
             matcher.match_encoded(parts, **kwargs)

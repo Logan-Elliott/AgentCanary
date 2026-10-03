@@ -67,6 +67,10 @@ class TokenMatcher:
         self.max_bytes = max_bytes
         self._issued = {canary.token.encode("ascii"): canary for canary in canaries}
 
+    @property
+    def registry_count(self) -> int:
+        return len(self._issued)
+
     def match(self, payload: bytes | str) -> MatchResult:
         data = bounded_bytes(payload, self.max_bytes)
         found: dict[str, Canary] = {}
@@ -133,7 +137,12 @@ class TokenMatcher:
             if re.search(rb"%[0-9A-Fa-f]{2}", data):
                 enqueue(unquote_to_bytes(data), "percent", depth + 1)
             stripped = data.strip()
-            if stripped[:1] in (b"{", b"[", b'"'):
+            # Bracketed transport values (notably IPv6 Host) are plain text.
+            # JSON arrays can hide markers only if they contain string values/keys.
+            json_candidate = stripped[:1] in (b"{", b'"') or (
+                stripped[:1] == b"[" and b'"' in stripped
+            )
+            if json_candidate:
                 try:
                     value = json.loads(stripped)
                 except (ValueError, RecursionError):
@@ -158,7 +167,11 @@ class TokenMatcher:
                         if len(nodes) + len(children) + visited > max_candidates:
                             raise DecodeError("json_nodes")
                         nodes.extend(children)
-            if len(stripped) >= 24 and re.fullmatch(rb"[A-Za-z0-9_+/-]+={0,2}", stripped):
+            if (
+                len(stripped) >= 24
+                and _MARKER.search(stripped) is None
+                and re.fullmatch(rb"[A-Za-z0-9_+/-]+={0,2}", stripped)
+            ):
                 try:
                     decoded = base64.b64decode(
                         stripped + b"=" * (-len(stripped) % 4), altchars=b"-_", validate=True

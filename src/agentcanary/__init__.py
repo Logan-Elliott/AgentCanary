@@ -5,6 +5,7 @@ from .matching import DecodeError, EncodedMatchResult, MatchResult, PayloadTooLa
 from .models import Action, Canary, Event
 from .monitors import InotifyMonitor, MonitorError
 from .network import BlockingProxy, HTTPInspector, NetworkError
+from .policy import IgnoreRule, Policy, PolicySink, load_policy
 from .protocols import EventSink, Monitor
 from .sdk import Observer, ToolInvocationError, ToolResult
 from .store import Store, StoreError
@@ -30,6 +31,10 @@ __all__ = [
     "HTTPInspector",
     "BlockingProxy",
     "NetworkError",
+    "IgnoreRule",
+    "Policy",
+    "PolicySink",
+    "load_policy",
     "PayloadTooLarge",
     "TokenMatcher",
     "Observer",
