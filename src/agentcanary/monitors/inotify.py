@@ -250,6 +250,11 @@ class InotifyMonitor:
                 # All validation reads precede every watch: no monitor feedback loop.
                 for fd, snapshot in pending:
                     wd = self._backend.add(fd)
+                    if wd in self._watches:
+                        # inotify reuses a descriptor for the same inode. Keep
+                        # the original coverage instead of silently replacing it.
+                        self._health("duplicate_inode", canary_id=snapshot.canary.id)
+                        continue
                     self._watches[wd] = snapshot
                     if _version(os.fstat(fd)) != snapshot.version or not self._current(snapshot):
                         self._invalidate(wd, "changed_during_start")
@@ -265,12 +270,18 @@ class InotifyMonitor:
                     self._stop.set()
                     raise MonitorError("monitor readiness timed out")
                 self.check()
-            except BaseException:
+            except BaseException as exc:
                 self._stop.set()
                 if self.running and self._thread is not None:
                     self._thread.join(10)
                 if not self.running:
                     self._close()
+                    self._thread = None
+                    self.ready.clear()
+                if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                    with suppress(Exception):
+                        self._health("startup_interrupted")
+                    raise
                 self._error = self._error or (
                     "monitor startup failed"
                     if sys.platform.startswith("linux")
