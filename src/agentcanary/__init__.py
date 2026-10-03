@@ -4,7 +4,7 @@ from .generator import SeedSpec, create_canary, seed
 from .matching import DecodeError, EncodedMatchResult, MatchResult, PayloadTooLarge, TokenMatcher
 from .models import Action, Canary, Event
 from .monitors import InotifyMonitor, MonitorError
-from .network import HTTPInspector
+from .network import BlockingProxy, HTTPInspector, NetworkError
 from .protocols import EventSink, Monitor
 from .sdk import Observer, ToolInvocationError, ToolResult
 from .store import Store, StoreError
@@ -28,6 +28,8 @@ __all__ = [
     "EncodedMatchResult",
     "DecodeError",
     "HTTPInspector",
+    "BlockingProxy",
+    "NetworkError",
     "PayloadTooLarge",
     "TokenMatcher",
     "Observer",

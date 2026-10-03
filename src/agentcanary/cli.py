@@ -14,6 +14,7 @@ from . import __version__
 from .generator import PROFILES, create_canary, seed
 from .models import Action
 from .monitors import InotifyMonitor, MonitorError
+from .network import BlockingProxy, NetworkError
 from .report import redact_text, render_report
 from .store import Store, StoreError
 from .templates import BUILTINS, MAX_TEMPLATE_BYTES
@@ -61,6 +62,23 @@ def build_parser() -> argparse.ArgumentParser:
     monitor.add_argument("root", help="workspace directory; seed before starting")
     monitor.add_argument("--run-id", help="correlation label")
     monitor.add_argument("--duration", type=float, help="stop after this many seconds")
+    proxy = commands.add_parser(
+        "proxy",
+        aliases=["serve"],
+        help="inspect loopback HTTP attempts; always block, never forward",
+    )
+    proxy.add_argument("--host", default="127.0.0.1", help="numeric loopback bind address")
+    proxy.add_argument(
+        "--port", type=int, default=8080, help="local listener port; 0 selects a free port"
+    )
+    proxy.add_argument(
+        "--run-id", help="operator correlation label; client headers cannot override it"
+    )
+    proxy.add_argument("--duration", type=float, help="stop after this many seconds")
+    proxy.add_argument(
+        "--read-timeout", type=float, default=5.0, help="total request read deadline"
+    )
+    proxy.add_argument("--max-workers", type=int, default=8, help="maximum simultaneous requests")
     types = commands.add_parser("types", help="list synthetic artifact types and profiles")
     types.add_argument("--json", action="store_true")
     return parser
@@ -122,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "monitor":
             return _monitor(Store(args.state_dir), args.root, args.run_id, args.duration)
+        if args.command in ("proxy", "serve"):
+            return _proxy(Store(args.state_dir), args)
         if args.command == "create":
             if (args.kind == "custom") != bool(args.template):
                 raise ValueError("custom type and --template must be used together")
@@ -147,7 +167,7 @@ def main(argv: list[str] | None = None) -> int:
             for record in records:
                 print(redact_text(f"Created {record.kind}: {record.path} ({record.id})"))
         return 0
-    except (OSError, ValueError, StoreError, MonitorError) as exc:
+    except (OSError, ValueError, StoreError, MonitorError, NetworkError) as exc:
         message = redact_text(str(exc))
         message = "".join(c if ord(c) >= 32 and ord(c) != 127 else "?" for c in message)
         print(f"agentcanary: {message}", file=sys.stderr)
@@ -155,3 +175,40 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("agentcanary: interrupted", file=sys.stderr)
         return 130
+
+
+def _proxy(store: Store, args: argparse.Namespace) -> int:
+    if args.duration is not None and (not math.isfinite(args.duration) or args.duration <= 0):
+        raise ValueError("duration must be positive and finite")
+    stopped = threading.Event()
+    previous = signal.getsignal(signal.SIGTERM)
+    signal.signal(signal.SIGTERM, lambda signum, frame: stopped.set())
+    try:
+        with BlockingProxy(
+            store,
+            host=args.host,
+            port=args.port,
+            run_id=args.run_id,
+            read_timeout=args.read_timeout,
+            max_workers=args.max_workers,
+        ) as proxy:
+            print(
+                json.dumps(
+                    {
+                        "status": "ready",
+                        "url": proxy.url,
+                        "run_id": proxy.run_id,
+                        "mode": "always_block",
+                        "registry_policy": "explicit_refresh",
+                    }
+                ),
+                flush=True,
+            )
+            deadline = time.monotonic() + args.duration if args.duration is not None else None
+            while not stopped.wait(0.05):
+                proxy.check()
+                if deadline is not None and time.monotonic() >= deadline:
+                    break
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+    return 0
