@@ -23,7 +23,7 @@ python -m pip install .
 agentcanary --help
 ```
 
-For development, use `uv sync --locked` and run commands with `uv run`. The committed lockfile fixes development/build tool versions. Package publication is not required for installation.
+For development, use `uv sync --locked` and run commands with `uv run`. The committed lockfile pins development dependencies; isolated builds use the Hatchling version range declared in `pyproject.toml`. Package publication is not required for installation.
 
 ## Seed and monitor a workspace
 

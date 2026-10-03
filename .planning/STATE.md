@@ -2,9 +2,9 @@
 gsd_state_version: "1.0"
 milestone: v0.1
 milestone_name: Local release
-current_phase: 4
-status: phase_complete
-stopped_at: Completed 04-01-PLAN.md
+current_phase: 5
+status: in_progress
+stopped_at: Phase 5 release acceptance and final review
 last_updated: "2026-10-03T23:30:20.461Z"
 last_activity: 2026-10-03
 last_activity_desc: Phase 4 verified with 184 passing tests and clean quality checks
@@ -23,13 +23,13 @@ progress:
 
 See: .planning/PROJECT.md
 Core value: traceable creation, access, propagation and attempted exfiltration.
-Current focus: Phase 4 complete; Phase 5 — Release hardening and documentation is next.
+Current focus: Phase 5 — release acceptance passed; independent final review in progress.
 
 ## Current Position
 
-Phase: 4 of 5
+Phase: 5 of 5
 Plan: 1 of 1
-Status: Phase 4 complete and verified
+Status: Phase 5 in progress; final review pending
 Last activity: 2026-10-03 — 184 tests, lint/format and strict typing passed
 Progress: [████████░░] 80%
 

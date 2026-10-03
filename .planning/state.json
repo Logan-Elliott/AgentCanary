@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v0.1 — Local release",
+  "milestone": "v0.1 \u2014 Local release",
   "phases": [
     {
       "number": "1",
@@ -26,13 +26,13 @@
     {
       "number": "5",
       "name": "Release hardening and documentation",
-      "status": "pending"
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Continue Phase 5 release hardening",
-    "reason": "Phase 4 of 5 complete and verified · 80%"
+    "label": "Finish release review and verification",
+    "reason": "Phase 5 of 5; release acceptance passed, final review pending"
   },
-  "updated_at": "2026-10-03T23:30:18.957Z"
+  "updated_at": "2026-10-03T23:34:18.777008+00:00"
 }
