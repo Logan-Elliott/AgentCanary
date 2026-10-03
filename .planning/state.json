@@ -1,0 +1,38 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v0.1 \u2014 Local release",
+  "phases": [
+    {
+      "number": "1",
+      "name": "Foundation and safe canary lifecycle",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Filesystem and attributed observations",
+      "status": "complete"
+    },
+    {
+      "number": "3",
+      "name": "HTTP and model request inspection",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "End-to-end demo and adversarial integration",
+      "status": "pending"
+    },
+    {
+      "number": "5",
+      "name": "Release hardening and documentation",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "$gsd-autonomous --from 3",
+    "label": "Execute Phase 3",
+    "reason": "Phases 1 and 2 verified; HTTP and model inspection next"
+  },
+  "updated_at": "2026-10-03T22:20:29.791Z"
+}
