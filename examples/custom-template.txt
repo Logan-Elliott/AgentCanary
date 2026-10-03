@@ -1,0 +1,4 @@
+# $label
+CANARY_ID=$canary_id
+SERVICE_URL=https://service.invalid
+SERVICE_TOKEN=INVALID_$token

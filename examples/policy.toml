@@ -1,0 +1,9 @@
+# Explicit policy: annotations affect reporting, never network forwarding.
+version = 1
+allow_origins = ["http://mock-model.invalid"]
+
+# Optional conjunctive ignore rule. Use an issued canary ID from your own registry.
+# [[ignore]]
+# source = "sdk"
+# action = "READ"
+# canary_id = "00000000-0000-4000-8000-000000000001"
