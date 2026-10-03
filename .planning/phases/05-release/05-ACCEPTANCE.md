@@ -28,7 +28,7 @@ The automated demo suite additionally verifies distinct runs/canaries, concurren
 
 All relative links resolve in the eight public Markdown documents. SDK, policy and custom-template examples executed successfully in disposable fixtures. No TODO, FIXME, placeholder feature or unfinished demo prose remains in public source/docs. CLI help is included in installed-package checks.
 
-Phase 1–3 independent reviews are clean after corrections. Phase 5 review found summary-publication and process-group ownership defects in the demo. Corrections and final regression are pending; the measurements above describe the pre-correction release candidate and do not by themselves mark the milestone complete.
+Phase 1–3 independent reviews are clean after corrections. Phase 5 review found summary-publication and process-group ownership defects in the demo. Demo corrections in `20c7d36` passed independent review and ten focused regressions. The subsequent full suite found one transient SQLite sidecar validation race (193 passed, one failed); correction and full rerun remain pending. Clean wheel/sdist installations after the demo corrections passed on all three interpreters. The measurements above are historical and do not by themselves mark the milestone complete.
 
 ## Material boundaries
 

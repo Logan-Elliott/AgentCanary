@@ -71,7 +71,9 @@ The passive adapter supports one registered canary per watched inode. A duplicat
 
 `BlockingProxy` exposes a local lifecycle and request-inspection boundary. It blocks all upstream attempts, including policy matches. Its PID field is unknown because a TCP request does not identify the sending process. Client-supplied identity headers are not trusted.
 
-The demo runs a controlled Python child in its own session. That disposable child acts as a Linux subreaper to collect owned tool descendants during failure cleanup. This is demonstration lifecycle machinery; it does not alter the SDK caller's process-wide child-reaping policy or provide hostile-process containment.
+The demo runs a controlled Python child in its own session. That disposable child acts as a Linux subreaper to collect owned tool descendants during failure cleanup. The parent observes completion without reaping the session leader until owned group signaling finishes, avoiding reuse of an unowned process-group identifier. This is demonstration lifecycle machinery; it does not alter the SDK caller's process-wide child-reaping policy or provide hostile-process containment.
+
+Demo reports are written to private temporary files, flushed and synchronized before an exclusive link publishes each destination. Existing destinations remain intact. A complete summary is published last; failed finalization cannot expose a newly written summary claiming success. This does not combine report publication and the event database into a single crash-atomic transaction.
 
 ## Extension points
 

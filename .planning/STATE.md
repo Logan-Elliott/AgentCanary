@@ -23,13 +23,13 @@ progress:
 
 See: .planning/PROJECT.md
 Core value: traceable creation, access, propagation and attempted exfiltration.
-Current focus: Phase 5 — release acceptance passed; independent final review in progress.
+Current focus: Phase 5 — final regression found a transient SQLite sidecar validation race; correction in progress.
 
 ## Current Position
 
 Phase: 5 of 5
 Plan: 1 of 1
-Status: Phase 5 in progress; final review pending
+Status: Phase 5 in progress; release regression correction pending
 Last activity: 2026-10-03 — 184 tests, lint/format and strict typing passed
 Progress: [████████░░] 80%
 
@@ -55,7 +55,7 @@ Progress: [████████░░] 80%
 
 ## Blockers/Concerns
 
-None. Known capability limits will be documented and tested, not concealed.
+Final regression: 193 passed, one concurrent SQLite sidecar validation failure. Correction and full rerun required. Demo review corrections passed independent review; wheel/sdist installs passed on Python 3.11, 3.12 and 3.14 before this last correction.
 
 ## Session Continuity
 
