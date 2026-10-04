@@ -50,13 +50,30 @@ def open_directory(path: str | Path, *, create: bool = False, private: bool = Fa
 
 
 def check_private_file(directory_fd: int, name: str, *, missing_ok: bool = False) -> None:
-    try:
-        info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-    except FileNotFoundError:
-        if missing_ok:
+    # SQLite removes sidecars when its last connection closes. stat() can have
+    # resolved the old inode just before unlink and report a zero link count.
+    # Recheck only these optional names; a primary DB or arbitrary file must
+    # never gain a disappearing-file exception from this sidecar-specific race.
+    optional_sidecar = missing_ok and name in (
+        "events.sqlite3-wal",
+        "events.sqlite3-shm",
+        "events.sqlite3-journal",
+    )
+    for _ in range(3):
+        try:
+            info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            if missing_ok:
+                return
+            raise
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_nlink > 1:
+            raise UnsafePathError(
+                "state files must be regular, singly linked and owned by this user"
+            )
+        if stat.S_IMODE(info.st_mode) & 0o077:
+            raise UnsafePathError("state files must be private (mode 0600)")
+        if info.st_nlink == 1:
             return
-        raise
-    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid():
-        raise UnsafePathError("state files must be regular, singly linked and owned by this user")
-    if stat.S_IMODE(info.st_mode) & 0o077:
-        raise UnsafePathError("state files must be private (mode 0600)")
+        if info.st_nlink != 0 or not optional_sidecar:
+            break
+    raise UnsafePathError("state files must be regular, singly linked and owned by this user")
