@@ -34,3 +34,7 @@ Exact results, durations and limits are in `05-ACCEPTANCE.md`; review dispositio
 ## Remaining work
 
 No implementation gap. Proceed to independent cross-phase audit, GSD milestone archive and cleanup. These administrative operations complete REL-03's final clause and are recorded by the milestone finalizer. No remote ship action is authorized.
+
+## Subsequent milestone closeout
+
+The independent integration audit passed 14/14 connections and 13/13 flows with zero findings. GSD then archived all five phases and the requirement/roadmap/audit records. REL-03 administrative archival is complete; see ../../../MILESTONES.md. The handoff wording above preserves the verification-time sequence.

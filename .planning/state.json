@@ -30,9 +30,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-audit-milestone v0.1",
-    "label": "Audit and archive the local release",
-    "reason": "All five phases verified; final cross-phase audit and local milestone closeout remain"
+    "command": "$gsd-progress",
+    "label": "Local release complete",
+    "reason": "All five phases verified and archived; no remaining authorized work"
   },
-  "updated_at": "2026-10-04T00:10:25.029161+00:00"
+  "updated_at": "2026-10-04T00:27:40.529965+00:00"
 }

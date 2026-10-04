@@ -9,7 +9,7 @@
     "plan_check": true,
     "verifier": true,
     "auto_advance": true,
-    "_auto_chain_active": true,
+    "_auto_chain_active": false,
     "compact_content": true,
     "nyquist_validation": false,
     "use_worktrees": false
