@@ -40,3 +40,7 @@ The commands ran against final code at task commit `25f3e20`. The suite includes
 Unprivileged inotify cannot identify the actor, guarantee individual read counts, observe mmap reliably, or prove the marker's specific bytes were consumed. Startup/shutdown and conservative invalidation produce documented coverage gaps. A user with control of the observer account can tamper with files or evidence. A permanently blocked custom sink can exceed shutdown's timeout; this is reported, not concealed. These are explicit product boundaries rather than unimplemented requirements.
 
 No stubs, unexpected test skips, unresolved test failures, external traffic or remaining human verification steps were identified.
+
+## Final release cross-check
+
+The earlier counts above describe this phase's original execution. After all review corrections through `f1bae7a`, the complete release suite passes **220 tests without skips** on Python 3.11.17, 3.12.3 and 3.14.8. Final wheel/source installations and the full demo pass on all three interpreters. Ruff lint/format and strict typing pass. Resolved review findings and exact evidence are recorded in `../05-release/05-REVIEW.md` and `../05-release/05-ACCEPTANCE.md`; this supersedes the original implementation snapshot for release acceptance without erasing its history.

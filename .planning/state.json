@@ -26,13 +26,13 @@
     {
       "number": "5",
       "name": "Release hardening and documentation",
-      "status": "in_progress"
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Finish release review and verification",
-    "reason": "Final regression sidecar validation race under correction; full release rerun required"
+    "command": "$gsd-audit-milestone v0.1",
+    "label": "Audit and archive the local release",
+    "reason": "All five phases verified; final cross-phase audit and local milestone closeout remain"
   },
-  "updated_at": "2026-10-03T23:55:25.361001+00:00"
+  "updated_at": "2026-10-04T00:10:25.029161+00:00"
 }

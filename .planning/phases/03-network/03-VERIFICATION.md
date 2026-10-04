@@ -25,3 +25,7 @@ Verification commands:
 Source-specific contracts and exact demo APIs are in `03-01-SUMMARY.md`. Failure coverage includes concurrent real clients, bounded worker admission, total read deadlines, incomplete messages, ambiguous/unsupported framing, rejected gzip, empty registry, sanitized sink failures, startup interruption, repeated stop, duration, SIGTERM and Ctrl-C. Stop interrupts blocked socket reads and joins workers. No test sends application data to an external address.
 
 Scope limits are explicit: no forwarding or machine-wide enforcement; no TLS/CONNECT, HTTP/2, chunked or keepalive; input observation does not prove model consumption or upstream delivery; passive HTTP PID is unknown; registry refresh is explicit; unsupported encodings/transforms and exhausted decoder budgets are incomplete coverage. No blocking defects or stubs remain.
+
+## Final release cross-check
+
+The earlier counts above describe this phase's original execution. After all review corrections through `f1bae7a`, the complete release suite passes **220 tests without skips** on Python 3.11.17, 3.12.3 and 3.14.8. Final wheel/source installations and the full demo pass on all three interpreters. Ruff lint/format and strict typing pass. Resolved review findings and exact evidence are recorded in `../05-release/05-REVIEW.md` and `../05-release/05-ACCEPTANCE.md`; this supersedes the original implementation snapshot for release acceptance without erasing its history.

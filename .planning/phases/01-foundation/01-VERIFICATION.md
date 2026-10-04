@@ -44,3 +44,7 @@ The earlier coverage run reported 79% aggregate coverage with 37 tests; CLI subp
 ## Result
 
 Passed. The core APIs and their constraints are recorded in `01-01-SUMMARY.md` for subsequent phases.
+
+## Final release cross-check
+
+The earlier counts above describe this phase's original execution. After all review corrections through `f1bae7a`, the complete release suite passes **220 tests without skips** on Python 3.11.17, 3.12.3 and 3.14.8. Final wheel/source installations and the full demo pass on all three interpreters. Ruff lint/format and strict typing pass. Resolved review findings and exact evidence are recorded in `../05-release/05-REVIEW.md` and `../05-release/05-ACCEPTANCE.md`; this supersedes the original implementation snapshot for release acceptance without erasing its history.

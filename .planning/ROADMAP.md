@@ -10,7 +10,7 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 - [x] **Phase 2: Filesystem and attributed observations** — Observe file access and explicitly attributed read/copy/tool interactions with honest source evidence.
 - [x] **Phase 3: HTTP and model request inspection** — Detect token propagation through HTTP and model requests with bounded parsing and local-only interception.
 - [x] **Phase 4: End-to-end demo and adversarial integration** — Prove the complete canary chain with a real subprocess and loopback HTTP and exercise failure boundaries.
-- [ ] **Phase 5: Release hardening and documentation** — Verify installation, audit the implementation, fix weaknesses and document a polished local release.
+- [x] **Phase 5: Release hardening and documentation** — Verify installation, audit the implementation, fix weaknesses and document a polished local release.
 
 ### Phase 1: Foundation and safe canary lifecycle
 
@@ -74,8 +74,8 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 2. Publish local professional README, architecture, threat model, limitations, examples, contribution and security guidance, and license.
 3. Complete autonomous architectural/security review, fix findings, rerun relevant checks, archive GSD milestone locally.
 
-**Plans:** 1 plan
-- [ ] 05-01-PLAN.md — Release hardening and documentation
+**Plans:** 1/1 plans executed
+- [x] 05-01-PLAN.md — Release hardening and documentation
 
 ## Progress
 
@@ -85,4 +85,4 @@ A traceable synthetic canary lifecycle, with explicit observation boundaries and
 | 2. Filesystem and attributed observations | 1/1 | Complete | 2026-10-03 |
 | 3. HTTP and model request inspection | 1/1 | Complete | 2026-10-03 |
 | 4. End-to-end demo and adversarial integration | 1/1 | Complete | 2026-10-03 |
-| 5. Release hardening and documentation | 0/1 | Not started | - |
+| 5. Release hardening and documentation | 1/1 | Complete | 2026-10-04 |

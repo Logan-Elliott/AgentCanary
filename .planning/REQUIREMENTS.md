@@ -30,9 +30,9 @@ Defined: 2026-10-03
 
 ### Release hardening and documentation
 
-- [ ] **REL-01**: Pass automated tests, lint, strict type checks, wheel/sdist build and clean-environment installation.
-- [ ] **REL-02**: Publish local professional README, architecture, threat model, limitations, examples, contribution and security guidance, and license.
-- [ ] **REL-03**: Complete autonomous architectural/security review, fix findings, rerun relevant checks, archive GSD milestone locally.
+- [x] **REL-01**: Pass automated tests, lint, strict type checks, wheel/sdist build and clean-environment installation.
+- [x] **REL-02**: Publish local professional README, architecture, threat model, limitations, examples, contribution and security guidance, and license.
+- [x] **REL-03**: Complete autonomous architectural/security review, fix findings, rerun relevant checks, archive GSD milestone locally.
 
 ## Future requirements
 
@@ -55,8 +55,10 @@ Defined: 2026-10-03
 | NET-03 | Phase 3 | Complete |
 | E2E-01 | Phase 4 | Complete |
 | E2E-02 | Phase 4 | Complete |
-| REL-01 | Phase 5 | Pending |
-| REL-02 | Phase 5 | Pending |
-| REL-03 | Phase 5 | Pending |
+| REL-01 | Phase 5 | Complete |
+| REL-02 | Phase 5 | Complete |
+| REL-03 | Phase 5 | Complete |
 
 All 15 requirements mapped. No remote publication is authorized.
+
+Release phase acceptance is verified. REL-03 administrative archival is performed by the enclosing milestone closeout after its cross-phase audit; MILESTONES.md records that transaction.

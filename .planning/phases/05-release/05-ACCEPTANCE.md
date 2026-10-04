@@ -1,35 +1,41 @@
 # Local release acceptance
 
-Date: 2026-10-03. Platform: Linux x86_64 with `/proc`. Package: AgentCanary 0.1.0, zero runtime dependencies. All application traffic was loopback-only and every artifact synthetic.
+Verified 2026-10-04 UTC (2026-10-03 America/New_York). Linux x86_64 with `/proc`; AgentCanary 0.1.0; zero runtime dependencies. Application traffic stayed on loopback and all artifacts were synthetic. Final implementation: `f1bae7a`.
 
 ## Regression and compatibility
 
 | Interpreter | Full suite | Duration |
 | --- | --- | --- |
-| CPython 3.11.17 | 184 passed, no skips | 51.39s |
-| CPython 3.12.3 | 184 passed, no skips | 45.46s |
-| CPython 3.14.8 | 184 passed, no skips | 54.86s |
+| CPython 3.11.17 | 220 passed, no skips | 64.67s |
+| CPython 3.12.3 | 220 passed, no skips | 65.19s |
+| CPython 3.14.8 | 220 passed, no skips | 68.43s |
 
-Strict mypy passed for 17 source files. Ruff lint and format checks passed. The development environment uses the committed `uv.lock`; separate `.venv-py311` and `.venv-py314` environments avoid replacing the default interpreter. A CI definition also covers Python 3.13; no hosted CI execution is claimed.
+Strict mypy passed for 17 source files. Ruff lint and format checks passed (87 files). The committed `uv.lock` pins development dependencies. Separate `.venv-py311` and `.venv-py314` environments preserve the default interpreter. CI also specifies Python 3.13; that interpreter and hosted CI were not run locally.
 
 ## Distribution acceptance
 
-`uv build` produced a wheel and source archive. `scripts/verify_install.py` passed on all three interpreters above. Each invocation creates separate fresh environments for wheel and source installation, removes Python path overrides, works outside the repository and verifies the installed import resolves inside that environment.
+`uv build` produced the final wheel and source archive after all source corrections. `scripts/verify_install.py` passed for both distributions on each interpreter above: six clean installations, each with the full CLI and demo checks. Each run creates a fresh environment, removes Python path overrides, works outside the repository and verifies imports resolve inside that environment.
 
-The verifier checks MIT metadata, no runtime dependency, `py.typed`, module/demo entry points, source docs/examples/tests, and exclusion of local planning/config/state artifacts. It then exercises CLI help/version, AWS/kubeconfig creation, the eight-artifact realistic profile, eight passive watches, loopback proxy readiness, reporting, the complete demo and JSONL/report agreement. Wheel installation uses `--no-index --no-deps`; source installation builds through an isolated backend with no runtime dependencies.
+The verifier checks MIT metadata, zero runtime dependencies, `py.typed`, module/demo entry points, source docs/examples/tests and exclusion of local planning/config/state artifacts. It exercises help/version, AWS/kubeconfig creation, eight-artifact realistic seeding, eight passive watches, loopback proxy readiness, reports, the complete demo and JSONL/report agreement. Wheel installation uses `--no-index --no-deps`; source installation uses an isolated build backend. Backend downloads are development setup, not an application service requirement.
 
 ## Retained demonstration
 
-`uv run agentcanary demo --directory ./agentcanary-demo-release --json` completed locally. The ignored private output directory contains inspectable state and redacted reports. Its six-action chain is CREATE, READ, COPY, TOOL_USE, MODEL_REQUEST and EXFILTRATION. Both HTTP responses were 403. SDK evidence identifies the actual child; passive and HTTP evidence leave PID unknown.
+`uv run agentcanary demo --directory ./agentcanary-demo-final --json` completed on the final source. The ignored private directory retains state and redacted reports. Canary `a735f6f5-50b9-4ee1-a4f6-35146b739804`, run `b7bae5a0-2806-4be2-a23a-b3463fb81f0f`: CREATE, READ, COPY, TOOL_USE, MODEL_REQUEST and EXFILTRATION, with both HTTP responses 403. Twelve records include health and independent source observations. SDK evidence identifies the child caller; passive and HTTP PID remain unknown.
 
-The automated demo suite additionally verifies distinct runs/canaries, concurrent sources, missing coverage, startup/sink/report failures, real interruption and timeouts, and termination/reaping of controlled tool descendants, including a SIGTERM-ignoring grandchild. No fixed external service or credentials are needed.
+The demo suite verifies distinct runs, concurrent sources, missing coverage, startup/sink/report failures, real interruption, timeouts, and termination/reaping of controlled tool descendants. Structured mock model JSON contains the actual observed input; separate tool receipts verify fixture bytes. No external provider, collector or credentials are used.
 
-## Documentation and review
+## Review and corrections
 
-All relative links resolve in the eight public Markdown documents. SDK, policy and custom-template examples executed successfully in disposable fixtures. No TODO, FIXME, placeholder feature or unfinished demo prose remains in public source/docs. CLI help is included in installed-package checks.
+Phase 1–3 independent reviews are clean. Final review found and resolved:
 
-Phase 1–3 independent reviews are clean after corrections. Phase 5 review found summary-publication and process-group ownership defects in the demo. Demo corrections in `20c7d36` passed independent review and ten focused regressions. The subsequent full suite found one transient SQLite sidecar validation race (193 passed, one failed); correction and full rerun remain pending. Clean wheel/sdist installations after the demo corrections passed on all three interpreters. The measurements above are historical and do not by themselves mark the milestone complete.
+1. Summary publication after failed synchronization — temporary private files are synchronized before exclusive publication (`20c7d36`).
+2. Group signaling after process identity ownership ended — completion uses `waitid` without reaping until final group cleanup (`20c7d36`).
+3. A real concurrent SQLite sidecar deletion race — narrowly bounded revalidation of safe zero-link optional sidecars (`f1bae7a`).
+
+The race was found by the first release rerun (193 passed, one failed), then confirmed by real concurrent reads before correction. All final suites above include its 26 deterministic/stress regressions. Independent reviewer checks passed all ten demo correction tests and all 26 sidecar tests; `05-REVIEW.md` has zero outstanding findings and retains original severities/evidence.
+
+All relative links resolve in eight public Markdown documents. SDK, policy and custom-template examples ran successfully in disposable fixtures. Public source/docs contain no placeholder features or unfinished demo prose. CLI help is covered by installed-package acceptance.
 
 ## Material boundaries
 
-Linux/proc is the supported platform. Passive reads and HTTP requests do not identify actor PID. Monitoring covers configured snapshots/integrations, with explicit health diagnostics for gaps. The HTTP endpoint always blocks and does not inspect bypassing sockets or encrypted tunnels. The SDK observes supplied input, not semantic use or provider delivery. Local evidence is not protected against a hostile process controlling the same account.
+Linux/proc is the supported platform. Passive reads and HTTP requests cannot identify actor PID. Coverage depends on configured snapshots/integrations, with health diagnostics for gaps. The HTTP endpoint always blocks and cannot inspect bypassing sockets or encrypted tunnels. SDK observations describe supplied input, not semantic consumption or provider delivery. Local evidence is not protected against a hostile process controlling the same account. These boundaries are documented and tested; they are not deferred implementation claims.

@@ -35,3 +35,7 @@ Each command was run through `rtk proxy`, with its exit status checked independe
 - **E2E-02:** New realistic process/sensor/failure tests supplement Phase 1–3 matching, false-positive/negative, unsupported protocol, encoding, concurrent writer and attribution coverage. The full suite verifies these together.
 
 No stubs, skipped tests, unrun checks or external setup remain. Real application connections are literal loopback; `.invalid` request labels do not become connection targets. Evidence makes no provider-delivery or passive actor-attribution claim. Clean wheel/sdist verification and final release review belong to Phase 5.
+
+## Final release cross-check
+
+The earlier counts above describe this phase's original execution. After all review corrections through `f1bae7a`, the complete release suite passes **220 tests without skips** on Python 3.11.17, 3.12.3 and 3.14.8. Final wheel/source installations and the full demo pass on all three interpreters. Ruff lint/format and strict typing pass. Resolved review findings and exact evidence are recorded in `../05-release/05-REVIEW.md` and `../05-release/05-ACCEPTANCE.md`; this supersedes the original implementation snapshot for release acceptance without erasing its history.
