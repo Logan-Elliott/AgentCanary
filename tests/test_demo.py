@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -173,9 +174,25 @@ def test_http_sink_failure_cannot_become_a_success(tmp_path, monkeypatch, worker
 
 def test_missing_passive_read_fails_at_deadline(tmp_path, monkeypatch, workers):
     monkeypatch.setattr(InotifyMonitor, "_process", lambda self, data: None)
+    original_exit_code = demo._child_exit_code
+    child_finished = False
+
+    def exit_code(child):
+        nonlocal child_finished
+        code = original_exit_code(child)
+        child_finished = code == 0
+        return code
+
+    def monotonic():
+        return time.monotonic() + (30 if child_finished else 0)
+
+    # Let the real child finish before expiring the missing-evidence deadline.
+    # Keep the worker threads' clocks unchanged.
+    monkeypatch.setattr(demo, "_child_exit_code", exit_code)
+    monkeypatch.setattr(demo, "time", SimpleNamespace(monotonic=monotonic, sleep=time.sleep))
     output = tmp_path / "demo"
     with pytest.raises(DemoError, match="passive read evidence"):
-        run_demo(output, timeout=1)
+        run_demo(output)
     assert (output / "child.json").exists()
     assert json.loads((output / "summary.json").read_text())["status"] == "failed"
 
