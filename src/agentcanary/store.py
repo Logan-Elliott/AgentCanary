@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import time
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import replace
@@ -105,7 +106,28 @@ class Store:
                 connection.rollback()
                 raise
             # Journal mode is persistent: never change it on a database we reject.
-            connection.execute("PRAGMA journal_mode=WAL")
+            self._enable_wal(connection)
+
+    @staticmethod
+    def _enable_wal(connection: sqlite3.Connection) -> None:
+        # Journal-mode changes can return BUSY without invoking SQLite's busy handler.
+        # Use one deadline instead of allowing each attempt its own ten-second wait.
+        deadline = time.monotonic() + 10
+        connection.execute("PRAGMA busy_timeout=0")
+        try:
+            while True:
+                try:
+                    connection.execute("PRAGMA journal_mode=WAL")
+                    return
+                except sqlite3.OperationalError as exc:
+                    if getattr(exc, "sqlite_errorcode", 0) & 0xFF != sqlite3.SQLITE_BUSY:
+                        raise
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise
+                    time.sleep(min(0.01, remaining))
+        finally:
+            connection.execute("PRAGMA busy_timeout=10000")
 
     @staticmethod
     def _insert_event(connection: sqlite3.Connection, event: Event) -> Event:

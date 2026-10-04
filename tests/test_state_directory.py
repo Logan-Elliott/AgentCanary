@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from agentcanary import Store, StoreError
+from agentcanary import store as store_module
 from agentcanary.filesystem import UnsafePathError
 
 
@@ -78,3 +79,77 @@ def test_synchronized_store_initialization_after_schema_validation(tmp_path: Pat
 
             futures = [pool.submit(initialize, barrier, state) for _ in range(2)]
             assert [future.result(timeout=15) for future in futures] == [0, 0]
+
+
+@pytest.mark.parametrize("release_lock", [True, False], ids=["released", "timeout"])
+def test_journal_mode_waits_for_competing_writer_with_deadline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, release_lock: bool
+) -> None:
+    state = tmp_path / "state"
+    original_connect = sqlite3.connect
+    blocker = None
+    attempts = 0
+    now = 0.0
+
+    class ContendedConnection(sqlite3.Connection):
+        def execute(self, sql, *args, **kwargs):
+            nonlocal blocker, attempts
+            if sql == "PRAGMA journal_mode=WAL":
+                attempts += 1
+                if blocker is None:
+                    blocker = original_connect(state / "events.sqlite3", isolation_level=None)
+                    blocker.execute("BEGIN IMMEDIATE")
+            return super().execute(sql, *args, **kwargs)
+
+    def connect(*args, **kwargs):
+        return original_connect(*args, **kwargs, factory=ContendedConnection)
+
+    def wait(delay: float) -> None:
+        nonlocal now
+        assert blocker is not None
+        assert 0 < delay <= 0.01
+        if release_lock:
+            blocker.rollback()
+        else:
+            now += 10
+
+    monkeypatch.setattr(store_module.sqlite3, "connect", connect)
+    monkeypatch.setattr(store_module.time, "monotonic", lambda: now)
+    monkeypatch.setattr(store_module.time, "sleep", wait)
+
+    try:
+        if release_lock:
+            store = Store(state)
+            assert store.events() == []
+            with original_connect(store.db_path) as connection:
+                assert connection.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+        else:
+            with pytest.raises(StoreError) as error:
+                Store(state)
+            assert error.value.__cause__.sqlite_errorcode == sqlite3.SQLITE_BUSY
+        assert attempts == 2
+    finally:
+        if blocker is not None:
+            blocker.close()
+
+
+def test_journal_mode_does_not_retry_other_sqlite_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_connect = sqlite3.connect
+
+    class FailingConnection(sqlite3.Connection):
+        def execute(self, sql, *args, **kwargs):
+            if sql == "PRAGMA journal_mode=WAL":
+                return super().execute("SELECT * FROM missing_table")
+            return super().execute(sql, *args, **kwargs)
+
+    def connect(*args, **kwargs):
+        return original_connect(*args, **kwargs, factory=FailingConnection)
+
+    monkeypatch.setattr(store_module.sqlite3, "connect", connect)
+    monkeypatch.setattr(store_module.time, "sleep", lambda _: pytest.fail("unexpected retry"))
+
+    with pytest.raises(StoreError) as error:
+        Store(tmp_path / "state")
+    assert error.value.__cause__.sqlite_errorcode == sqlite3.SQLITE_ERROR
